@@ -2,12 +2,10 @@ import requests
 import random
 import string
 import time
+from colorama import Fore, init
 
-# Renk kodları tanımları
-RED = '\033[91m'
-GREEN = '\033[92m'
-MAGENTA = '\033[95m'
-RESET = '\033[0m'
+# colorama'yi başlat
+init(autoreset=True)
 
 def random_letters(n):
     """Rastgele harflerden oluşan bir string oluşturur."""
@@ -26,12 +24,12 @@ def check_user_status(letter_count, interval):
             response = requests.get(f"https://{url}")
 
             if "This user is not claimed" in response.text:
-                status = f"{GREEN}unclaimed{RESET}"
+                status = f"{Fore.GREEN}unclaimed"
             else:
-                status = f"{RED}claimed{RESET}"
+                status = f"{Fore.RED}claimed"
 
             # URL'yi mor renkte ve diğer kısmı varsayılan renkte yazdır
-            print(f"URL: {MAGENTA}{base_url}{RESET}{random_suffix} - Status: {status}")
+            print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - Status: {status}{Fore.RESET}")
 
         except Exception as e:
             print(f"Error accessing https://{url}: {e}")
@@ -52,4 +50,4 @@ try:
             # Fonksiyonu kullanıcıdan alınan harf sayısı ve aralık ile çalıştır
             check_user_status(letter_count, interval)
 except ValueError:
-    print("Lütfen geçerli bir sayı girin.") 
+    print("Lütfen geçerli bir sayı girin.")
