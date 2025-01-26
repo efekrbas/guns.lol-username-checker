@@ -47,7 +47,7 @@ try:
     if letter_count <= 0:
         print("Harf sayısı pozitif bir sayı olmalıdır.")
     else:
-        interval = float(input("Delay (in seconds): "))
+        interval = float(input("Delay (in seconds *recommended 0.1*): "))
         if interval <= 0:
             print("Saniye aralığı pozitif bir sayı olmalıdır.")
         else:
