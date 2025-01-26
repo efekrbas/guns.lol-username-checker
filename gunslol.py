@@ -8,8 +8,9 @@ from colorama import Fore, init
 init(autoreset=True)
 
 def random_letters(n):
-    """Rastgele harflerden oluşan bir string oluşturur."""
-    return ''.join(random.choice(string.ascii_lowercase) for _ in range(n))
+    """Rastgele harfler ve özel karakterlerden oluşan bir string oluşturur."""
+    characters = string.ascii_lowercase + string.digits + "._"
+    return ''.join(random.choice(characters) for _ in range(n))
 
 def check_user_status(letter_count, interval):
     """Kullanıcının belirlediği harf sayısı ve aralık ile kullanıcı durumunu kontrol eder."""
@@ -25,6 +26,9 @@ def check_user_status(letter_count, interval):
 
             if "This user is not claimed" in response.text:
                 status = f"{Fore.GREEN}unclaimed"
+                # Unclaimed kullanıcı adını dosyaya yaz
+                with open("unclaimed.txt", "a") as file:
+                    file.write(f"{url}\n")
             else:
                 status = f"{Fore.RED}claimed"
 
