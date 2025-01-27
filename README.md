@@ -1,4 +1,6 @@
-This project sends requests to guns.lol APIs. If this will cause problems, guns.lol authorities should contact me. discord: medi0s
+if you want to contact
+discord: medi0s
+instagram: medi0s
 
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
