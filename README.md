@@ -1,4 +1,4 @@
-if you want to contact
+if you want contact to me
 - discord: medi0s
 - instagram: medi0s
 
