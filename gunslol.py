@@ -12,7 +12,7 @@ def random_letters(n):
     characters = string.ascii_lowercase + string.digits + "._"
     return ''.join(random.choice(characters) for _ in range(n))
 
-def check_user_status(letter_count, interval, webhook_url=None):
+def check_user_status(letter_count, interval, save_to_file=True, webhook_url=None):
     """Kullanıcının belirlediği harf sayısı ve aralık ile kullanıcı durumunu kontrol eder."""
     base_url = "guns.lol/"
     while True:
@@ -27,11 +27,12 @@ def check_user_status(letter_count, interval, webhook_url=None):
             if "This user is not claimed" in response.text:
                 status = f"{Fore.GREEN}unclaimed"
                 # Unclaimed kullanıcı adını dosyaya yaz
-                with open("unclaimed.txt", "a") as file:
-                    file.write(f"{url}\n")
+                if save_to_file:
+                    with open("unclaimed.txt", "a") as file:
+                        file.write(f"{url}\n")
                 # Discord webhook'a unclaimed kullanıcı adı gönder
                 if webhook_url:
-                    payload = {"content": f"Unclaimed username found! **{url}** @everyone"}
+                    payload = {"content": f"Unclaimed username found: {url} @everyone"}
                     try:
                         requests.post(webhook_url, json=payload)
                     except Exception as e:
@@ -58,12 +59,13 @@ try:
         if interval <= 0:
             print("Saniye aralığı pozitif bir sayı olmalıdır.")
         else:
+            save_to_file = input("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ").strip().lower() == 'y'
             use_webhook = input("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ").strip().lower()
             webhook_url = None
             if use_webhook == 'y':
                 webhook_url = input("Enter your Discord webhook URL: ").strip()
 
-            # Fonksiyonu kullanıcıdan alınan harf sayısı ve aralık ile çalıştır
-            check_user_status(letter_count, interval, webhook_url)
+            # Fonksiyonu kullanıcıdan alınan bilgilerle çalıştır
+            check_user_status(letter_count, interval, save_to_file, webhook_url)
 except ValueError:
     print("Lütfen geçerli bir sayı girin.")
