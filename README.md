@@ -7,7 +7,7 @@ This project sends requests to guns.lol APIs. If this will cause problems, guns.
 - open `gunslol.py`
 - if you want to check how many letter usernames, type a number accordingly in the first question
 - Answer the second question with a duration (recommended 0.1)
-- In the 3rd question, if you want to be notified to your discord webhook, type y and enter your webhook, if you want to continue without webhook, type n and continue without webhook.
+- In the 3rd question, if you want to be notified to your discord webhook, type y and enter your discord webhook, if you want to continue without webhook, type n and continue without webhook.
 - done bot will check usernames and write unclaimed usernames to unclaimed.txt for you
 
 
