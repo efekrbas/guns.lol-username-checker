@@ -1,6 +1,6 @@
 if you want to contact
-discord: medi0s
-instagram: medi0s
+- discord: medi0s
+- instagram: medi0s
 
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
