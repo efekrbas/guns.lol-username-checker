@@ -1,5 +1,5 @@
 if you want contact to me
-- discord: medi0s
+- discord: mediosxrd
 - instagram: medi0s
 
 # How to use
