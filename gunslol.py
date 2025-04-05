@@ -9,7 +9,7 @@ init(autoreset=True)
 
 def random_letters(n):
     """Rastgele harfler ve özel karakterlerden oluşan bir string oluşturur."""
-    characters = string.ascii_lowercase + string.digits + "._"
+    characters = string.ascii_lowercase + string.digits + "._-"
     return ''.join(random.choice(characters) for _ in range(n))
 
 def check_user_status(letter_count, interval, save_to_file=True, webhook_url=None):
