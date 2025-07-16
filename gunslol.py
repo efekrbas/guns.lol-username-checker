@@ -4,7 +4,7 @@ import string
 import time
 from colorama import Fore, init
 
-# colorama'yı başlat
+
 init(autoreset=True)
 
 def random_letters(n):
@@ -16,21 +16,21 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
     """Kullanıcının belirlediği harf sayısı ve aralık ile kullanıcı durumunu kontrol eder."""
     base_url = "guns.lol/"
     while True:
-        # Rastgele harf sayısına göre URL oluştur
+    
         random_suffix = random_letters(letter_count)
         url = base_url + random_suffix
 
         try:
-            # Web sitesine istek gönder
+      
             response = requests.get(f"https://{url}")
 
             if "This user is not claimed" in response.text:
                 status = f"{Fore.GREEN}unclaimed"
-                # Unclaimed kullanıcı adını dosyaya yaz
+            
                 if save_to_file:
                     with open("unclaimed.txt", "a") as file:
                         file.write(f"{url}\n")
-                # Discord webhook'a unclaimed kullanıcı adı gönder
+           
                 if webhook_url:
                     payload = {"content": f"Unclaimed username found: {url} @everyone"}
                     try:
@@ -40,16 +40,16 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
             else:
                 status = f"{Fore.RED}claimed"
 
-            # URL'yi mor renkte ve diğer kısmı varsayılan renkte yazdır
+        
             print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - Status: {status}{Fore.RESET}")
 
         except Exception as e:
             print(f"Error accessing https://{url}: {e}")
 
-        # Kullanıcının belirlediği saniye aralığına göre bekle
+     
         time.sleep(interval)
 
-# Kullanıcıdan harf sayısı ve kontrol aralığı bilgilerini al
+
 try:
     letter_count = int(input("How many letter usernames should be checked? (Example: 5): "))
     if letter_count <= 0:
@@ -65,7 +65,7 @@ try:
             if use_webhook == 'y':
                 webhook_url = input("Enter your Discord webhook URL: ").strip()
 
-            # Fonksiyonu kullanıcıdan alınan bilgilerle çalıştır
+
             check_user_status(letter_count, interval, save_to_file, webhook_url)
 except ValueError:
     print("Lütfen geçerli bir sayı girin.")
