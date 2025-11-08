@@ -9,4 +9,6 @@
 - In the 4rd question, if you want to be notified to your discord webhook, type `Y` and enter your discord webhook, if you want to continue without webhook, type `N` and continue without webhook.
 - done bot will check unclaimed usernames
 
+# Images
+
 
