@@ -11,4 +11,3 @@
 
 # Images
 
-(https://github.com/efekrbas/guns.lol-username-checker/blob/main/images/image1.png)
