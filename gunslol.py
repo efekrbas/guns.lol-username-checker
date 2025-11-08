@@ -1,8 +1,12 @@
-import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 import random
 import string
 import time
 from colorama import Fore, init
+import requests
 
 
 init(autoreset=True)
@@ -15,39 +19,81 @@ def random_letters(n):
 def check_user_status(letter_count, interval, save_to_file=True, webhook_url=None):
     """Kullanıcının belirlediği harf sayısı ve aralık ile kullanıcı durumunu kontrol eder."""
     base_url = "guns.lol/"
-    while True:
     
-        random_suffix = random_letters(letter_count)
-        url = base_url + random_suffix
+    # Chrome seçeneklerini ayarlıyoruz
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')  # Arka planda çalıştır
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
+    chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    
+    try:
+        driver = webdriver.Chrome(options=chrome_options)
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+    except Exception as e:
+        print(f"{Fore.RED}Chrome WebDriver bulunamadı. Lütfen ChromeDriver'ı yükleyin.{Fore.RESET}")
+        print(f"Detay: {e}")
+        return
+    
+    try:
+        while True:
+            random_suffix = random_letters(letter_count)
+            url = base_url + random_suffix
 
-        try:
-      
-            response = requests.get(f"https://{url}")
+            try:
+                driver.get(f"https://{url}")
+                
+                # Sayfanın yüklenmesini bekliyoruz (maksimum 30 saniye)
+                try:
+                    WebDriverWait(driver, 30).until(
+                        lambda d: "Please wait" not in d.page_source or "verify" not in d.page_source.lower()
+                    )
+                except TimeoutException:
+                    pass
+                
+                # Biraz daha bekleyip sayfanın tam yüklenmesini sağlıyoruz
+                time.sleep(2)
+                
+                page_text = driver.page_source.lower()
 
-            if "This user is not claimed" in response.text:
-                status = f"{Fore.GREEN}unclaimed"
+                # Unclaimed kontrolü - case-insensitive ve farklı olası metinler
+                unclaimed_indicators = [
+                    "username not found",
+                    "claim this username",
+                    "this user is not claimed",
+                    "user not found",
+                    "not claimed"
+                ]
+                
+                is_unclaimed = any(indicator in page_text for indicator in unclaimed_indicators)
+                
+                if is_unclaimed:
+                    status = f"{Fore.GREEN}unclaimed"
+                
+                    if save_to_file:
+                        with open("unclaimed.txt", "a") as file:
+                            file.write(f"{url}\n")
+               
+                    if webhook_url:
+                        payload = {"content": f"Unclaimed username found: {url} @everyone"}
+                        try:
+                            requests.post(webhook_url, json=payload)
+                        except Exception as e:
+                            print(f"Webhook gönderimi başarısız: {e}")
+                else:
+                    status = f"{Fore.RED}claimed"
             
-                if save_to_file:
-                    with open("unclaimed.txt", "a") as file:
-                        file.write(f"{url}\n")
-           
-                if webhook_url:
-                    payload = {"content": f"Unclaimed username found: {url} @everyone"}
-                    try:
-                        requests.post(webhook_url, json=payload)
-                    except Exception as e:
-                        print(f"Webhook gönderimi başarısız: {e}")
-            else:
-                status = f"{Fore.RED}claimed"
+                print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - Status: {status}{Fore.RESET}")
 
-        
-            print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - Status: {status}{Fore.RESET}")
-
-        except Exception as e:
-            print(f"Error accessing https://{url}: {e}")
-
-     
-        time.sleep(interval)
+            except Exception as e:
+                print(f"Error accessing https://{url}: {e}")
+         
+            time.sleep(interval)
+    finally:
+        driver.quit()
 
 
 try:
