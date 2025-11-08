@@ -1,4 +1,4 @@
-# IS NO LONGER WORKING
+# THIS PROJECT IS NO LONGER WORKING
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
 - First clone the repository or <a href="https://github.com/2xrd/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
