@@ -1,6 +1,6 @@
 # Read
-
-- If you get the error “Only letters, numbers, and ._ are accepted” when trying to get the username, try getting it from the alias section. (You need to purchase a premium account for the alias.)
+- You cannot retrieve usernames that start or end with “-” or “.” from the username field. 
+- You did not read the above item. (: and If you get the error “Only letters, numbers, and ._ are accepted” when trying to get the username, try getting it from the alias section. (You need to purchase a premium  for the alias.)
 
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
