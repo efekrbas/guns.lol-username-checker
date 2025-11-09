@@ -1,7 +1,5 @@
 # Read
-- You cannot retrieve usernames that start or end with “-” or “.” from the username field. 
-- You didn't read the item I wrote above, and when you tried to get a username, you got the error “Only letters, numbers, and ._ are accepted.” In that case, try getting one from the nickname section. (You need to purchase premium for a nickname.)
-
+- You cannot use usernames that start or end with “-” or “.” in the username field. You can only use them in the alias section (you need to purchase premium for the alias).
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
 - First clone the repository or <a href="https://github.com/2xrd/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
