@@ -78,7 +78,14 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
                             file.write(f"{url}\n")
                
                     if webhook_url:
-                        payload = {"content": f"Unclaimed username found: {url} @everyone"}
+                        embed = {
+                            "title": f"Available: {random_suffix} (https://guns.lol/{random_suffix})",
+                            "description": f"github.com/efekrbas",
+                            "color": 0x9B59B6  # Mor renk
+                        }
+                        payload = {
+                            "embeds": [embed],
+                        }
                         try:
                             requests.post(webhook_url, json=payload)
                         except Exception as e:
