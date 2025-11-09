@@ -59,16 +59,18 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
                 
                 page_text = driver.page_source.lower()
 
-                # Unclaimed kontrolü - case-insensitive ve farklı olası metinler
-                unclaimed_indicators = [
-                    "username not found",
-                    "claim this username",
-                    "this user is not claimed",
-                    "user not found",
-                    "not claimed"
+                # Claimed kontrolü - belirli metinler varsa claimed'dir
+                claimed_indicators = [
+                    "join discord.gg/guns to display your status",
+                    "please connect your discord account"
                 ]
+                is_claimed = any(indicator in page_text for indicator in claimed_indicators)
+
+                # Unclaimed kontrolü - "Claim this username by clicking on the button below!" metnini ara
+                unclaimed_indicator = "claim this username by clicking on the button below!"
                 
-                is_unclaimed = any(indicator in page_text for indicator in unclaimed_indicators)
+                # Eğer claimed değilse ve unclaimed göstergesi varsa unclaimed'dir
+                is_unclaimed = not is_claimed and unclaimed_indicator in page_text
                 
                 if is_unclaimed:
                     status = f"{Fore.GREEN}unclaimed"
