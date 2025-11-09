@@ -1,3 +1,7 @@
+# Read
+
+- If the username is not available, try using an alias instead. 
+
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
 - First clone the repository or <a href="https://github.com/2xrd/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
