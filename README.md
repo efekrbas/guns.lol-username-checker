@@ -1,6 +1,6 @@
 # Read
 
-- If the username is not available, try using an alias instead. 
+- If you get the error “Only letters, numbers, and ._ are accepted” when trying to get the username, try getting it from the alias section.
 
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
