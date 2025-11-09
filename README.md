@@ -1,5 +1,5 @@
 # Read
-- You can only get usernames starting with “-” or “.” from the alias section. If you try to get it from the username section, you will get the error “Only letters, numbers, and ._ are accepted.” (You need to purchase Premium for the alias.)
+- You can get usernames starting with “-” or “.” from the alias section. If you try to get it from the username section, you will get the error “Only letters, numbers, and ._ are accepted.” (You need to purchase Premium for the alias.)
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
 - First clone the repository or <a href="https://github.com/2xrd/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
