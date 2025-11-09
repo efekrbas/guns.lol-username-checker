@@ -1,5 +1,5 @@
 # Read
-- You cannot use usernames that start or end with “-” or “.” in the username field. You can only use them in the alias section (you need to purchase premium for the alias).
+- You cannot use usernames that start or end with “-” or “.” in the username field because when you try to use them, you will get the error “Only letters, numbers, and ._ are accepted.” Therefore, you can use these types of usernames in the alias section (you need to purchase premium for the alias).
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
 - First clone the repository or <a href="https://github.com/2xrd/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
