@@ -9,7 +9,7 @@
 - Answer the second question with a duration (recommended 0.1)
 - In the 3rd question, if you want to save unclaimed usernames to unclaimed.txt, type `Y` if you don't want `N`
 - In the 4rd question, if you want to be notified to your discord webhook, type `Y` and enter your discord webhook, if you want to continue without webhook, type `N` and continue without webhook.
-- done bot will check unclaimed usernames
+- done tool will check unclaimed usernames
 
 # Images
 
