@@ -2,7 +2,7 @@
 - Usernames that start or end with characters such as ".", "-", or "_" can only be used in the alias section. (If you don't have a premium , you need to purchase a premium for alias.)
 # How to use
 - Have <a href="https://www.python.org/">Python</a> installed.
-- First clone the repository or <a href="https://github.com/2xrd/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
+- First clone the repository or <a href="https://github.com/efekrbas/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
 - Install the required libraries: open `install.bat`
 - open `gunslol.py`
 
