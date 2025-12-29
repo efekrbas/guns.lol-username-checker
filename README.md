@@ -1,7 +1,3 @@
-# DOESNT WORK
-
-For some reason I don't understand, the tool isn't working. If I can fix it, the py file will be back here. :D
-
 # Read
 - Usernames that start or end with characters such as ".", "-", or "_" can only be used in the alias section. (If you don't have a premium , you need to purchase a premium for alias.)
 # How to use
