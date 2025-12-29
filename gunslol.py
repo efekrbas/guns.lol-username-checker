@@ -1,10 +1,13 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import random
 import string
 import time
+import re
 from colorama import Fore, init
 import requests
 
@@ -26,20 +29,17 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-    chrome_options.add_argument('--disable-images')  # Resimleri yükleme (hızlandırır)
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument('--disable-plugins')
-    chrome_options.add_argument('--disable-background-timer-throttling')
-    chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-    chrome_options.add_argument('--disable-renderer-backgrounding')
+    chrome_options.add_argument('--disable-images')  # Resimleri yükleme - hızlandırır
+    chrome_options.add_argument('--disable-gpu')  # GPU kullanımını devre dışı bırak
+    chrome_options.add_argument('--disable-extensions')  # Uzantıları devre dışı bırak
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    chrome_options.page_load_strategy = 'eager'  # Tüm kaynaklar yüklenmeden devam et
     
     try:
         driver = webdriver.Chrome(options=chrome_options)
-        driver.set_page_load_timeout(10)  # Sayfa yükleme timeout'unu 10 saniyeye düşür
+        driver.set_page_load_timeout(10)  # Maksimum 10 saniye bekle
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     except Exception as e:
         print(f"{Fore.RED}Chrome WebDriver bulunamadı. Lütfen ChromeDriver'ı yükleyin.{Fore.RESET}")
@@ -54,37 +54,35 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
             try:
                 driver.get(f"https://{url}")
                 
-                # Sayfa içeriğinin yüklenmesi için bekleme (maksimum 5 saniye)
+                # Sayfanın yüklenmesini bekliyoruz
                 try:
-                    WebDriverWait(driver, 5).until(
-                        lambda d: d.page_source and len(d.page_source) > 100
+                    WebDriverWait(driver, 10).until(
+                        lambda d: d.execute_script("return document.readyState") == "complete"
                     )
                 except TimeoutException:
                     pass
                 
-                # Ekstra bekleme (JavaScript içeriğinin yüklenmesi için)
-                time.sleep(2)  # Daha uzun bekleme - modal'ın yüklenmesi için
+                # JavaScript içeriğinin yüklenmesi için bekleme
+                time.sleep(2)  # JavaScript içeriğinin yüklenmesi için
                 
-                # Sayfa kaynağını hem orijinal hem küçük harfle kontrol et
-                page_source_original = driver.page_source
-                page_text = page_source_original.lower()
-
-                # ÖNCE Unclaimed kontrolü - eğer bu göstergeler varsa kesinlikle unclaimed'dir
-                unclaimed_indicators_specific = [
-                    "kullanıcı adı bulunamadı",  # Türkçe - en spesifik
-                    "Kullanıcı adı bulunamadı",  # Türkçe orijinal
-                    "aşağıdaki butonla bu kullanıcı adını kap!",  # Türkçe - spesifik
-                    "Aşağıdaki butonla bu kullanıcı adını kap!",  # Türkçe orijinal
-                    "claim this username by clicking on the button below!",  # İngilizce - spesifik
-                    "Claim this username by clicking on the button below!"  # İngilizce orijinal
-                ]
+                # Sayfa içeriğinin görünür olmasını bekle
+                try:
+                    WebDriverWait(driver, 5).until(
+                        lambda d: len(d.find_elements(By.TAG_NAME, "body")) > 0 and 
+                                 len(d.find_element(By.TAG_NAME, "body").text) > 10
+                    )
+                except TimeoutException:
+                    pass
                 
-                # Hem orijinal hem küçük harfle kontrol et
-                is_unclaimed = any(indicator in page_source_original for indicator in unclaimed_indicators_specific) or \
-                               any(indicator in page_text for indicator in unclaimed_indicators_specific)
+                # Sayfa başlığını al
+                try:
+                    page_title = driver.title
+                except:
+                    page_title = ""
                 
-                # Eğer unclaimed değilse, claimed olarak kabul et
-                # (Unclaimed göstergeleri yoksa sayfa muhtemelen claimed'dir)
+                # Sayfa başlığına göre kontrol et
+                # Eğer sayfa başlığında "@" işareti yoksa unclaimed'dir, varsa claimed'dir
+                is_unclaimed = "@" not in page_title
                 
                 if is_unclaimed:
                     status = f"{Fore.GREEN}unclaimed"
