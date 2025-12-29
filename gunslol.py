@@ -3,7 +3,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 import random
 import string
 import time
@@ -18,6 +18,20 @@ def random_letters(n):
     """Rastgele harfler ve özel karakterlerden oluşan bir string oluşturur."""
     characters = string.ascii_lowercase + string.digits + "._-"
     return ''.join(random.choice(characters) for _ in range(n))
+
+def get_random_user_agent():
+    """Rastgele bir user-agent döndürür - rate limit'i önlemek için."""
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
+    ]
+    return random.choice(user_agents)
 
 def check_user_status(letter_count, interval, save_to_file=True, webhook_url=None):
     """Kullanıcının belirlediği harf sayısı ve aralık ile kullanıcı durumunu kontrol eder."""
@@ -34,12 +48,15 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
     chrome_options.add_argument('--disable-extensions')  # Uzantıları devre dışı bırak
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
-    chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    chrome_options.page_load_strategy = 'eager'  # Tüm kaynaklar yüklenmeden devam et
+    # İlk user-agent'i ayarla
+    chrome_options.add_argument(f'user-agent={get_random_user_agent()}')
+    chrome_options.page_load_strategy = 'eager'  # Hızlı yükleme - DOM hazır olunca devam et
     
     try:
         driver = webdriver.Chrome(options=chrome_options)
-        driver.set_page_load_timeout(10)  # Maksimum 10 saniye bekle
+        driver.set_page_load_timeout(3)  # Çok kısa timeout
+        driver.implicitly_wait(0)  # Implicit wait yok
+        driver.set_script_timeout(2)  # Çok kısa script timeout
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     except Exception as e:
         print(f"{Fore.RED}Chrome WebDriver bulunamadı. Lütfen ChromeDriver'ı yükleyin.{Fore.RESET}")
@@ -47,42 +64,41 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
         return
     
     try:
+        request_count = 0
         while True:
             random_suffix = random_letters(letter_count)
             url = base_url + random_suffix
+            request_count += 1
 
             try:
-                driver.get(f"https://{url}")
-                
-                # Sayfanın yüklenmesini bekliyoruz
+                # Her istekte user-agent değiştir (rate limit'i önlemek için)
                 try:
-                    WebDriverWait(driver, 10).until(
-                        lambda d: d.execute_script("return document.readyState") == "complete"
-                    )
-                except TimeoutException:
+                    driver.execute_cdp_cmd('Network.setUserAgentOverride', {
+                        "userAgent": get_random_user_agent()
+                    })
+                except:
                     pass
                 
-                # JavaScript içeriğinin yüklenmesi için bekleme
-                time.sleep(2)  # JavaScript içeriğinin yüklenmesi için
+                # Her istekten önce bekleme (rate limit'i önlemek için)
+                time.sleep(random.uniform(0.3, 0.7))
                 
-                # Sayfa içeriğinin görünür olmasını bekle
+                # Sayfa yükleme - timeout yok, direkt devam et
                 try:
-                    WebDriverWait(driver, 5).until(
-                        lambda d: len(d.find_elements(By.TAG_NAME, "body")) > 0 and 
-                                 len(d.find_element(By.TAG_NAME, "body").text) > 10
-                    )
-                except TimeoutException:
+                    driver.get(f"https://{url}")
+                except (TimeoutException, WebDriverException):
+                    # Timeout olsa bile devam et
                     pass
                 
-                # Sayfa başlığını al
+                # Sayfa başlığını al - bekleme yok
+                page_title = ""
                 try:
                     page_title = driver.title
                 except:
-                    page_title = ""
+                    pass
                 
                 # Sayfa başlığına göre kontrol et
                 # Eğer sayfa başlığında "@" işareti yoksa unclaimed'dir, varsa claimed'dir
-                is_unclaimed = "@" not in page_title
+                is_unclaimed = "@" not in page_title if page_title else False
                 
                 if is_unclaimed:
                     status = f"{Fore.GREEN}unclaimed"
@@ -110,9 +126,27 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
                 print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - Status: {status}{Fore.RESET}")
 
             except Exception as e:
-                print(f"Error accessing https://{url}: {e}")
+                # Genel hata yakalama - programın durmaması için
+                error_msg = str(e)
+                if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+                    print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - {Fore.YELLOW}Timeout - Skipping{Fore.RESET}")
+                else:
+                    print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - {Fore.RED}Error: {error_msg[:50]}...{Fore.RESET}")
          
-            time.sleep(interval)
+            # Rastgele delay ekle - rate limit'i önlemek için
+            # Base interval + rastgele 0.5-1.0 saniye (daha uzun)
+            random_delay = interval + random.uniform(0.5, 1.0)
+            
+            # Her 10 istekte bir daha uzun bekleme (rate limit'i önlemek için)
+            if request_count % 10 == 0:
+                random_delay += random.uniform(2.0, 4.0)
+                print(f"{Fore.YELLOW}Rate limit prevention: waiting {random_delay:.2f} seconds...{Fore.RESET}")
+            
+            # Her 5 istekte bir orta bekleme
+            elif request_count % 5 == 0:
+                random_delay += random.uniform(0.5, 1.5)
+            
+            time.sleep(random_delay)
     finally:
         driver.quit()
 
