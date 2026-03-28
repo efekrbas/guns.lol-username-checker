@@ -54,9 +54,9 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
     
     try:
         driver = webdriver.Chrome(options=chrome_options)
-        driver.set_page_load_timeout(3)  # Çok kısa timeout
-        driver.implicitly_wait(0)  # Implicit wait yok
-        driver.set_script_timeout(2)  # Çok kısa script timeout
+        driver.set_page_load_timeout(5)  # Biraz daha süre tanıyalım
+        driver.implicitly_wait(0)
+        driver.set_script_timeout(3)
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     except Exception as e:
         print(f"{Fore.RED}Chrome WebDriver bulunamadı. Lütfen ChromeDriver'ı yükleyin.{Fore.RESET}")
@@ -85,22 +85,46 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
                 # Sayfa yükleme - timeout yok, direkt devam et
                 try:
                     driver.get(f"https://{url}")
+                    # Sayfanın en azından bir kısmının yüklendiğinden emin olalım
+                    time.sleep(0.5)
                 except (TimeoutException, WebDriverException):
-                    # Timeout olsa bile devam et
                     pass
                 
-                # Sayfa başlığını al - bekleme yok
-                page_title = ""
+                # Durum tespiti için değişkenler
+                is_unclaimed = False
+                is_error = False
+                
                 try:
-                    page_title = driver.title
+                    # Sayfa içeriğinde "Username not found" başlığını ara (En garantisi bu)
+                    h1_elements = driver.find_elements(By.TAG_NAME, "h1")
+                    unclaimed_found = False
+                    for h1 in h1_elements:
+                        if "username not found" in h1.text.lower() or "kullanıcı adı bulunamadı" in h1.text.lower():
+                            unclaimed_found = True
+                            break
+                    
+                    if unclaimed_found:
+                        is_unclaimed = True
+                    else:
+                        # Sayfa başlığını kontrol et (Ek önlem)
+                        page_title = driver.title.lower()
+                        if page_title and "@" in page_title:
+                            is_unclaimed = False
+                        elif not page_title or "guns.lol" in page_title:
+                            # Başlıkta @ yoksa ve sayfa başlığı varsa muhtemelen unclaimed'dir
+                            # Ancak boşsa hata sayabiliriz
+                            if not page_title:
+                                is_error = True
+                            else:
+                                is_unclaimed = True
+                        else:
+                            is_error = True
                 except:
-                    pass
-                
-                # Sayfa başlığına göre kontrol et
-                # Eğer sayfa başlığında "@" işareti yoksa unclaimed'dir, varsa claimed'dir
-                is_unclaimed = "@" not in page_title if page_title else False
-                
-                if is_unclaimed:
+                    is_error = True
+
+                if is_error:
+                    status = f"{Fore.YELLOW}error/timeout"
+                elif is_unclaimed:
                     status = f"{Fore.GREEN}unclaimed"
                 
                     if save_to_file:
