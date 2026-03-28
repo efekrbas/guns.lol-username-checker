@@ -1,4 +1,4 @@
-// Type specific words here
+// Type specific words here as follows
 // efe
 // efekrbs
 // efekrbas
