@@ -1,6 +1,6 @@
 # Features
 - **Robust Detection:** Uses content-based verification (checking for "Username not found" header) to prevent false positives.
-- **Wordlist Support:** Option to check specific usernames from `customlist.txt`.
+- **Customlist Support:** Option to check specific usernames from `customlist.txt`.
 - **Discord Integration:** Send available usernames directly to your Discord server via webhooks.
 - **Rate Limit Prevention:** Intelligent delays and user-agent rotation.
 
