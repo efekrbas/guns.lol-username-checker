@@ -1,4 +1,4 @@
-// Enter the specific usernames you want to check below (one per line):
+// Enter the usernames you want to check (one per line):
 // Example:
 // efe
 // efekrbs
