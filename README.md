@@ -11,9 +11,8 @@
 1. Have [Python](https://www.python.org/) installed.
 2. Clone the repository or [download it as .zip](https://github.com/efekrbas/guns.lol-username-checker/archive/refs/heads/main.zip)
 3. Install required libraries by running `install.bat`.
-4. (Optional) Add specific usernames to `customlist.txt` (one per line). Lines starting with `//`, `#`, or `;` will be ignored.
-5. Run `python gunslol.py`.
-6. Follow the on-screen prompts (Letter count -> Delay -> Customlist option).
+4. Run `python gunslol.py`.
+5. Follow the on-screen prompts (Letter count -> Delay -> Customlist option).
 
 # Images
 
