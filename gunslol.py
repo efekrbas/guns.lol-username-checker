@@ -203,7 +203,7 @@ try:
     if use_wordlist:
         try:
             with open("customlist.txt", "r", encoding="utf-8") as file:
-                wordlist = [line.strip() for line in file if line.strip() and not line.strip().startswith("//")]
+                wordlist = [line.strip() for line in file if line.strip() and not (line.strip().startswith("//") or line.strip().startswith("#") or line.strip().startswith(";"))]
             if not wordlist:
                 print(f"{Fore.YELLOW}customlist.txt is empty. Switching to random mode.{Fore.RESET}")
                 use_wordlist = False
