@@ -1,4 +1,4 @@
-// Type specific words here as follows
+// Enter the specific words you want to check here, as shown below
 // efe
 // efekrbs
 // efekrbas
