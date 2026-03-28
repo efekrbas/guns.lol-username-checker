@@ -11,8 +11,8 @@
 # ❓ How to use
 1. Have [Python](https://www.python.org/) installed.
 2. Clone the repository or [download it as .zip](https://github.com/efekrbas/guns.lol-username-checker/archive/refs/heads/main.zip)
-3. Install required libraries by running `install.bat`.
-4. Run `python gunslol.py`.
+3. Install required libraries by running `install.bat`
+4. Open `gunslol.py`
 5. Follow the on-screen prompts (Letter count -> Delay -> Customlist option --> unclaimed.txt save option --> Discord webhook option).
 
 # 📷 Image
