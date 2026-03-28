@@ -1,13 +1,13 @@
-# ⚠️Important Note
+# ⚠️ Important Note
 - Usernames that start or end with characters such as ".", "-", or "_" can only be used in the alias section. (If you don't have a premium, you need to purchase a premium for alias.)
 
-# ⭐Features
+# ⭐ Features
 - **Robust Detection:** Uses content-based verification (checking for "Username not found" header) to prevent false positives.
 - **Customlist Support:** Option to check specific usernames from `customlist.txt`.
 - **Discord Integration:** Send available usernames directly to your Discord server via webhooks.
 - **Rate Limit Prevention:** Intelligent delays and user-agent rotation.
 
-# ❓How to use
+# ❓ How to use
 1. Have [Python](https://www.python.org/) installed.
 2. Clone the repository or [download it as .zip](https://github.com/efekrbas/guns.lol-username-checker/archive/refs/heads/main.zip)
 3. Install required libraries by running `install.bat`
