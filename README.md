@@ -1,4 +1,4 @@
-# ⚠️ Read
+# ⚠️ Important Notes
 - Usernames that start or end with characters such as ".", "-", or "_" can only be used in the alias section. (If you don't have a premium, you need to purchase a premium for alias.)
 - (Optional) Add specific usernames to `customlist.txt` (one per line). Lines starting with `//`, `#`, or `;` will be ignored.
 
