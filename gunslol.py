@@ -33,8 +33,8 @@ def get_random_user_agent():
     ]
     return random.choice(user_agents)
 
-def check_user_status(letter_count, interval, save_to_file=True, webhook_url=None):
-    """Kullanıcının belirlediği harf sayısı ve aralık ile kullanıcı durumunu kontrol eder."""
+def check_user_status(letter_count, interval, wordlist=None, save_to_file=True, webhook_url=None):
+    """Kullanıcının belirlediği harf sayısı/liste ve aralık ile kullanıcı durumunu kontrol eder."""
     base_url = "guns.lol/"
     
     # Chrome seçeneklerini ayarlıyoruz
@@ -65,9 +65,20 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
     
     try:
         request_count = 0
+        
+        # Eğer wordlist varsa ona göre dön, yoksa sonsuz döngü (random) yap
+        usernames_to_check = wordlist if wordlist else None
+        
         while True:
-            random_suffix = random_letters(letter_count)
-            url = base_url + random_suffix
+            if usernames_to_check is not None:
+                if request_count >= len(usernames_to_check):
+                    print(f"{Fore.CYAN}Wordlist check completed.{Fore.RESET}")
+                    break
+                current_suffix = usernames_to_check[request_count]
+            else:
+                current_suffix = random_letters(letter_count)
+            
+            url = base_url + current_suffix
             request_count += 1
 
             try:
@@ -133,7 +144,7 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
                
                     if webhook_url:
                         embed = {
-                            "title": f"Available: {random_suffix} (https://guns.lol/{random_suffix})",
+                            "title": f"Available: {current_suffix} (https://guns.lol/{current_suffix})",
                             "description": f"github.com/efekrbas",
                             "color": 0x9B59B6  # Mor renk
                         }
@@ -147,15 +158,15 @@ def check_user_status(letter_count, interval, save_to_file=True, webhook_url=Non
                 else:
                     status = f"{Fore.RED}claimed"
             
-                print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - Status: {status}{Fore.RESET}")
+                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - Status: {status}{Fore.RESET}")
 
             except Exception as e:
                 # Genel hata yakalama - programın durmaması için
                 error_msg = str(e)
                 if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
-                    print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - {Fore.YELLOW}Timeout - Skipping{Fore.RESET}")
+                    print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}Timeout - Skipping{Fore.RESET}")
                 else:
-                    print(f"URL: {Fore.MAGENTA}{base_url}{random_suffix} - {Fore.RED}Error: {error_msg[:50]}...{Fore.RESET}")
+                    print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.RED}Error: {error_msg[:50]}...{Fore.RESET}")
          
             # Rastgele delay ekle - rate limit'i önlemek için
             # Base interval + rastgele 0.5-1.0 saniye (daha uzun)
@@ -179,18 +190,37 @@ try:
     letter_count = int(input("How many letter usernames should be checked? (Example: 5): "))
     if letter_count <= 0:
         print("Harf sayısı pozitif bir sayı olmalıdır.")
-    else:
-        interval = float(input("Delay (in seconds *recommended 0.1*): "))
-        if interval <= 0:
-            print("Saniye aralığı pozitif bir sayı olmalıdır.")
-        else:
-            save_to_file = input("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ").strip().lower() == 'y'
-            use_webhook = input("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ").strip().lower()
-            webhook_url = None
-            if use_webhook == 'y':
-                webhook_url = input("Enter your Discord webhook URL: ").strip()
+        exit()
 
+    interval = float(input("Delay (in seconds *recommended 0.1*): "))
+    if interval < 0:
+        print("Saniye aralığı negatif olamaz.")
+        exit()
 
-            check_user_status(letter_count, interval, save_to_file, webhook_url)
+    use_wordlist = input("Use customlist.txt? (Y/N): ").strip().lower() == 'y'
+    wordlist = None
+
+    if use_wordlist:
+        try:
+            with open("customlist.txt", "r", encoding="utf-8") as file:
+                wordlist = [line.strip() for line in file if line.strip()]
+            if not wordlist:
+                print(f"{Fore.YELLOW}customlist.txt is empty. Switching to random mode.{Fore.RESET}")
+                use_wordlist = False
+            else:
+                print(f"{Fore.GREEN}{len(wordlist)} usernames loaded from customlist.txt.{Fore.RESET}")
+        except FileNotFoundError:
+            print(f"{Fore.RED}customlist.txt not found. Switching to random mode.{Fore.RESET}")
+            use_wordlist = False
+
+    save_to_file = input("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ").strip().lower() == 'y'
+    use_webhook = input("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ").strip().lower()
+    webhook_url = None
+    if use_webhook == 'y':
+        webhook_url = input("Enter your Discord webhook URL: ").strip()
+
+    check_user_status(letter_count, interval, wordlist, save_to_file, webhook_url)
 except ValueError:
-    print("Lütfen geçerli bir sayı girin.")
+    print("Lütfen geçerli bir değer girin.")
+except KeyboardInterrupt:
+    print("\nProgram durduruldu.")
