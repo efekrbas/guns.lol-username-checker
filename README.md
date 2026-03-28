@@ -1,10 +1,19 @@
+# Features
+- **Robust Detection:** Uses content-based verification (checking for "Username not found" header) to prevent false positives.
+- **Wordlist Support:** Option to check specific usernames from `customlist.txt`.
+- **Discord Integration:** Send available usernames directly to your Discord server via webhooks.
+- **Rate Limit Prevention:** Intelligent delays and user-agent rotation.
+
 # Read
-- Usernames that start or end with characters such as ".", "-", or "_" can only be used in the alias section. (If you don't have a premium , you need to purchase a premium for alias.)
+- Usernames that start or end with characters such as ".", "-", or "_" can only be used in the alias section. (If you don't have a premium, you need to purchase a premium for alias.)
+
 # How to use
-- Have <a href="https://www.python.org/">Python</a> installed.
-- First clone the repository or <a href="https://github.com/efekrbas/guns.lol-username-checker/archive/refs/heads/main.zip">download it as .zip</a>
-- Install the required libraries: open `install.bat`
-- open `gunslol.py`
+1. Have [Python](https://www.python.org/) installed.
+2. Clone the repository or [download it as .zip](https://github.com/efekrbas/guns.lol-username-checker/archive/refs/heads/main.zip)
+3. Install required libraries by running `install.bat`.
+4. (Optional) Add specific usernames to `customlist.txt` (one per line). Lines starting with `//`, `#`, or `;` will be ignored.
+5. Run `python gunslol.py`.
+6. Follow the on-screen prompts (Letter count -> Delay -> Wordlist option).
 
 # Images
 
