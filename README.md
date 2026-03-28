@@ -13,7 +13,7 @@
 3. Install required libraries by running `install.bat`.
 4. (Optional) Add specific usernames to `customlist.txt` (one per line). Lines starting with `//`, `#`, or `;` will be ignored.
 5. Run `python gunslol.py`.
-6. Follow the on-screen prompts (Letter count -> Delay -> Wordlist option).
+6. Follow the on-screen prompts (Letter count -> Delay -> Customlist option).
 
 # Images
 
