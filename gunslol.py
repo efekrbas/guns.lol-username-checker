@@ -14,6 +14,9 @@ import requests
 
 init(autoreset=True)
 
+# Characters that require a Premium alias on guns.lol
+PREMIUM_CHARS = set('._-')
+
 def random_letters(n):
     """Rastgele harfler ve özel karakterlerden oluşan bir string oluşturur."""
     characters = string.ascii_lowercase + string.digits + "._-"
@@ -33,7 +36,7 @@ def get_random_user_agent():
     ]
     return random.choice(user_agents)
 
-def check_user_status(letter_count, interval, wordlist=None, save_to_file=True, webhook_url=None):
+def check_user_status(letter_count, interval, wordlist=None, save_to_file=True, webhook_url=None, filter_premium=False):
     """Kullanıcının belirlediği harf sayısı/liste ve aralık ile kullanıcı durumunu kontrol eder."""
     base_url = "guns.lol/"
     
@@ -77,7 +80,14 @@ def check_user_status(letter_count, interval, wordlist=None, save_to_file=True, 
                 current_suffix = usernames_to_check[request_count]
             else:
                 current_suffix = random_letters(letter_count)
-            
+
+            # Premium Alias Filter — skip usernames that start/end with ._-
+            if filter_premium and (current_suffix[0] in PREMIUM_CHARS or current_suffix[-1] in PREMIUM_CHARS):
+                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}SKIPPED (premium alias){Fore.RESET}")
+                if usernames_to_check is not None:
+                    request_count += 1
+                continue
+
             url = base_url + current_suffix
             request_count += 1
 
@@ -186,18 +196,35 @@ def check_user_status(letter_count, interval, wordlist=None, save_to_file=True, 
         driver.quit()
 
 
+def ask_yn(prompt):
+    """Ask a Y/N question and only accept 'y' or 'n' as valid input."""
+    while True:
+        answer = input(prompt).strip().lower()
+        if answer in ('y', 'n'):
+            return answer == 'y'
+        print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
+
+
 try:
-    letter_count = int(input("How many letter usernames should be checked? (Example: 5): "))
-    if letter_count <= 0:
-        print("Harf sayısı pozitif bir sayı olmalıdır.")
-        exit()
+    while True:
+        try:
+            letter_count = int(input("How many letter usernames should be checked? (Example: 5): "))
+            if letter_count > 0:
+                break
+            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
+        except ValueError:
+            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
 
-    interval = float(input("Delay (in seconds *recommended 0.1*): "))
-    if interval < 0:
-        print("Saniye aralığı negatif olamaz.")
-        exit()
+    while True:
+        try:
+            interval = float(input("Delay (in seconds *recommended 0.1*): "))
+            if interval >= 0:
+                break
+            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
+        except ValueError:
+            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
 
-    use_wordlist = input("Use customlist.txt? (Y/N): ").strip().lower() == 'y'
+    use_wordlist = ask_yn("Use customlist.txt? (Y/N): ")
     wordlist = None
 
     if use_wordlist:
@@ -213,14 +240,18 @@ try:
             print(f"{Fore.RED}customlist.txt not found. Switching to random mode.{Fore.RESET}")
             use_wordlist = False
 
-    save_to_file = input("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ").strip().lower() == 'y'
-    use_webhook = input("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ").strip().lower()
-    webhook_url = None
-    if use_webhook == 'y':
-        webhook_url = input("Enter your Discord webhook URL: ").strip()
+    filter_premium = ask_yn("Filter out usernames requiring Premium? (Starts/ends with '.', '-', '_') [Y/N]: ")
 
-    check_user_status(letter_count, interval, wordlist, save_to_file, webhook_url)
-except ValueError:
-    print("Lütfen geçerli bir değer girin.")
+    save_to_file = ask_yn("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ")
+    use_webhook = ask_yn("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ")
+    webhook_url = None
+    if use_webhook:
+        while True:
+            webhook_url = input("Enter your Discord webhook URL: ").strip()
+            if webhook_url.startswith("https://discord.com/api/webhooks/") or webhook_url.startswith("https://discordapp.com/api/webhooks/"):
+                break
+            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
+
+    check_user_status(letter_count, interval, wordlist, save_to_file, webhook_url, filter_premium)
 except KeyboardInterrupt:
-    print("\nProgram durduruldu.")
+    print(f"\n{Fore.RED}Program stopped.{Fore.RESET}")
