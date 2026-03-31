@@ -268,11 +268,6 @@ def check_user_status(letter_count, interval, customlist=None, filter_premium=Fa
          
             # Random delay
             random_delay = interval + random.uniform(0.5, 1.0)
-            if request_count % 10 == 0:
-                random_delay += random.uniform(2.0, 4.0)
-                print(f"{Fore.YELLOW}Rate limit prevention: waiting {random_delay:.2f} seconds...{Fore.RESET}")
-            elif request_count % 5 == 0:
-                random_delay += random.uniform(0.5, 1.5)
             
             time.sleep(random_delay)
     finally:
