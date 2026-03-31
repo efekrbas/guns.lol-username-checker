@@ -55,6 +55,19 @@ def _cleanup_chrome():
 
 atexit.register(_cleanup_chrome)
 
+# Windows: Catch terminal close (X button) event
+if os.name == 'nt':
+    def _console_handler(event):
+        """Handle console close events (X button, shutdown, logoff)."""
+        _cleanup_chrome()
+        return False
+    try:
+        kernel32 = ctypes.windll.kernel32
+        _handler_func = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_uint)(_console_handler)
+        kernel32.SetConsoleCtrlHandler(_handler_func, True)
+    except Exception:
+        pass
+
 def random_letters(n, filter_premium=False):
     """Generates a random string consisting of letters and special characters."""
     all_chars = string.ascii_lowercase + string.digits + "._-"
