@@ -103,6 +103,7 @@ def check_user_status(letter_count, interval, customlist=None, filter_premium=Fa
     chrome_options.add_argument('--log-level=3')  # Show only critical errors
     chrome_options.add_argument('--silent')
     chrome_options.add_argument('--disable-logging')
+    chrome_options.add_argument('--lang=en-US')  # Force English to prevent localization issues
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
     # Set initial user-agent
@@ -185,34 +186,25 @@ def check_user_status(letter_count, interval, customlist=None, filter_premium=Fa
                         is_error = False
                         
                         try:
-                            # 1. URL Check (If redirected, it's taken)
-                            current_url = driver.current_url.lower().rstrip('/')
-                            if current_suffix.lower() not in current_url:
-                                is_unclaimed = False # Taken and redirected
+                            h1_elements = driver.find_elements(By.TAG_NAME, "h1")
+                            unclaimed_found = False
+                            for h1 in h1_elements:
+                                h1_text = h1.text.lower()
+                                if "username not found" in h1_text or "bulunamad" in h1_text:
+                                    unclaimed_found = True
+                                    break
+                            
+                            if unclaimed_found:
+                                is_unclaimed = True
                             else:
-                                # 2. Look for "Username not found" heading
-                                h1_elements = driver.find_elements(By.TAG_NAME, "h1")
-                                unclaimed_found = False
-                                for h1 in h1_elements:
-                                    if "username not found" in h1.text.lower():
-                                        unclaimed_found = True
-                                        break
-                                
-                                if unclaimed_found:
+                                # Title check (EN + TR)
+                                page_title = driver.title.lower()
+                                if "everything you want" in page_title or "istediğin her şey" in page_title:
                                     is_unclaimed = True
+                                elif not page_title:
+                                    is_error = True
                                 else:
-                                    # 3. Check page title (Additional measure)
-                                    page_title = driver.title.lower()
-                                    unclaimed_titles = [
-                                        "guns.lol: everything you want, right here."
-                                    ]
-                                    
-                                    if any(ut in page_title for ut in unclaimed_titles):
-                                        is_unclaimed = True
-                                    elif not page_title:
-                                        is_error = True
-                                    else:
-                                        is_unclaimed = False # Other cases = claimed
+                                    is_unclaimed = False
                         except:
                             is_error = True
 
