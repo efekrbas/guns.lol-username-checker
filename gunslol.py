@@ -13,9 +13,6 @@ import requests
 import os
 import subprocess
 from selenium.webdriver.chrome.service import Service
-import zipfile
-import shutil
-import tempfile
 
 
 init(autoreset=True)
@@ -50,124 +47,42 @@ def get_random_user_agent():
     ]
     return random.choice(user_agents)
 
-def create_proxy_extension(proxy):
-    """Creates a Chrome extension to handle authenticated proxies."""
-    # Format: user:pass@ip:port or ip:port
-    if '@' in proxy:
-        auth, address = proxy.split('@')
-        user, password = auth.split(':')
-        host, port = address.split(':')
-    else:
-        host, port = proxy.split(':')
-        user, password = "", ""
-
-    manifest_json = """
-    {
-        "version": "1.0.0",
-        "manifest_version": 2,
-        "name": "Chrome Proxy",
-        "permissions": [
-            "proxy",
-            "tabs",
-            "unlimitedStorage",
-            "storage",
-            "<all_urls>",
-            "webRequest",
-            "webRequestBlocking"
-        ],
-        "background": {
-            "scripts": ["background.js"]
-        },
-        "minimum_chrome_version":"22.0.0"
-    }
-    """
-
-    background_js = """
-    var config = {
-            mode: "fixed_servers",
-            rules: {
-              singleProxy: {
-                scheme: "http",
-                host: "%s",
-                port: parseInt(%s)
-              },
-              bypassList: ["localhost"]
-            }
-          };
-
-    chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
-
-    function callbackFn(details) {
-        return {
-            authCredentials: {
-                username: "%s",
-                password: "%s"
-            }
-        };
-    }
-
-    chrome.webRequest.onAuthRequired.addListener(
-                callbackFn,
-                {urls: ["<all_urls>"]},
-                ['blocking']
-    );
-    """ % (host, port, user, password)
-
-    plugin_file = os.path.join(tempfile.gettempdir(), f'proxy_auth_plugin_{host}_{port}.zip')
-
-    with zipfile.ZipFile(plugin_file, 'w') as zp:
-        zp.writestr("manifest.json", manifest_json)
-        zp.writestr("background.js", background_js)
-
-    return plugin_file
-
-def get_driver(proxy=None):
-    """Initializes and returns a Selenium WebDriver with optional proxy."""
+def check_user_status(letter_count, interval, wordlist=None, filter_premium=False, save_to_file=True, webhook_url=None):
+    """Checks the status of usernames based on character count or list and interval."""
+    base_url = "guns.lol/"
+    
+    # Configure Chrome options
     chrome_options = Options()
-    chrome_options.add_argument('--headless=new')
+    chrome_options.add_argument('--headless=new')  # Run in background (New modern mode)
     chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-gpu-compositing')
+    chrome_options.add_argument('--disable-gpu-compositing') # Disable GPU compositing
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-    chrome_options.add_argument('--disable-images')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-software-rasterizer')
-    chrome_options.add_argument('--ignore-gpu-blocklist')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument('--log-level=3')
+    chrome_options.add_argument('--disable-images')  # Don't load images - speeds up
+    chrome_options.add_argument('--disable-gpu')  # Disable GPU usage
+    chrome_options.add_argument('--disable-software-rasterizer') # Disable software rasterizer
+    chrome_options.add_argument('--ignore-gpu-blocklist') # Ignore GPU blocklist
+    chrome_options.add_argument('--disable-extensions')  # Disable extensions
+    chrome_options.add_argument('--log-level=3')  # Show only critical errors
     chrome_options.add_argument('--silent')
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
+    # Set initial user-agent
     chrome_options.add_argument(f'user-agent={get_random_user_agent()}')
-    chrome_options.page_load_strategy = 'eager'
-
-    if proxy:
-        if '@' in proxy: # Authenticated proxy
-            plugin_file = create_proxy_extension(proxy)
-            chrome_options.add_extension(plugin_file)
-        else: # Simple proxy
-            chrome_options.add_argument(f'--proxy-server=http://{proxy}')
-
-    service = Service(log_path=os.devnull)
-    if os.name == 'nt':
-        service.creation_flags = subprocess.CREATE_NO_WINDOW
-    
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.set_page_load_timeout(10)
-    driver.implicitly_wait(0)
-    driver.set_script_timeout(3)
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-    return driver
-def check_user_status(letter_count, interval, wordlist=None, filter_premium=False, save_to_file=True, webhook_url=None, proxies=None):
-    """Checks the status of usernames based on character count or list and interval."""
-    base_url = "guns.lol/"
-    
-    proxy_index = 0
-    current_proxy = proxies[proxy_index] if proxies else None
+    chrome_options.page_load_strategy = 'eager'  # Fast load - continue when DOM is ready
     
     try:
-        driver = get_driver(current_proxy)
+        # Silencing DevTools and other terminal messages at system level
+        service = Service(log_path=os.devnull)
+        if os.name == 'nt': # Windows only
+            service.creation_flags = subprocess.CREATE_NO_WINDOW
+        
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver.set_page_load_timeout(10)  # Increased timeout to 10 seconds
+        driver.implicitly_wait(0)
+        driver.set_script_timeout(3)
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     except Exception as e:
         print(f"{Fore.RED}Error launching Chrome: {e}{Fore.RESET}")
         return
@@ -210,15 +125,10 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
                         try:
                             driver.get(f"https://{url}")
                             time.sleep(1.5) 
-                        except (TimeoutException, WebDriverException) as e:
-                            print(f"{Fore.YELLOW}Connection error, switching proxy...{Fore.RESET}")
+                        except (TimeoutException, WebDriverException):
                             attempt += 1
-                            if proxies:
-                                proxy_index = (proxy_index + 1) % len(proxies)
-                                current_proxy = proxies[proxy_index]
-                                driver.quit()
-                                driver = get_driver(current_proxy)
                             if attempt < max_retries:
+                                time.sleep(2)
                                 continue
                             is_error = True
                             break
@@ -231,19 +141,10 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
                         if any(x in page_title for x in ["cloudflare", "just a moment", "access denied", "attention required"]) or \
                            any(x in page_source for x in ["too many requests", "blocked", "enable javascript", "verify you are human"]):
                             is_rate_limited = True
-                            print(f"{Fore.YELLOW}Rate limit or Cloudflare detected, rotating proxy...{Fore.RESET}")
-                            if proxies:
-                                proxy_index = (proxy_index + 1) % len(proxies)
-                                current_proxy = proxies[proxy_index]
-                                driver.quit()
-                                driver = get_driver(current_proxy)
-                                attempt += 1
-                                continue
-                            else:
-                                print(f"{Fore.RED}Rate limited and no more proxies available. Waiting 30s...{Fore.RESET}")
-                                time.sleep(30)
-                                attempt += 1
-                                continue
+                            print(f"{Fore.RED}Rate limited. No proxies in use. Waiting 60s...{Fore.RESET}")
+                            time.sleep(60)
+                            attempt += 1
+                            continue
 
                         is_unclaimed = False
                         is_error = False
@@ -381,22 +282,7 @@ try:
     if use_webhook:
         webhook_url = input("Enter your Discord webhook URL: ").strip()
 
-    use_proxies = get_input("Use proxies from proxies.txt? (Y/N): ", type_=bool)
-    proxies = None
-    if use_proxies:
-        try:
-            with open("proxies.txt", "r", encoding="utf-8") as file:
-                proxies = [line.strip() for line in file if line.strip()]
-            if not proxies:
-                print(f"{Fore.YELLOW}proxies.txt is empty. Continuing without proxies.{Fore.RESET}")
-                proxies = None
-            else:
-                print(f"{Fore.GREEN}{len(proxies)} proxies loaded.{Fore.RESET}")
-        except FileNotFoundError:
-            print(f"{Fore.RED}proxies.txt not found. Continuing without proxies.{Fore.RESET}")
-            proxies = None
-
-    check_user_status(letter_count, interval, wordlist, filter_premium, save_to_file, webhook_url, proxies)
+    check_user_status(letter_count, interval, wordlist, filter_premium, save_to_file, webhook_url)
 except KeyboardInterrupt:
     print(f"\n{Fore.YELLOW}Program terminated.{Fore.RESET}")
 except Exception as e:
