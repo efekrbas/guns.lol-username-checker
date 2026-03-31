@@ -9,7 +9,19 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
 ## ⚠️ Important Note
 - Usernames that start or end with characters such as ".", "-", or "_" are **Premium Aliases**. You need a premium account to claim these.
 - This tool includes a toggle to filter these out so you don't waste time on names you can't claim for free.
-- If the tool begins showing all usernames as **Claimed** regardless of availability, your IP has likely been rate-limited by guns.lol. To fix this, please **restart your VPN** or change your IP address.
+
+### 🔒 Too Many "Claimed" Results? Use a VPN!
+> If the tool starts showing almost every username as **Claimed** (even ones that shouldn't be), it means your IP has been **rate-limited / blocked** by guns.lol.
+>
+> **How to fix:**
+> 1. **Open your VPN** and connect to a different server.
+> 2. Restart the tool.
+> 3. If it happens again, switch to another VPN server.
+>
+> Without a VPN, you'll need to wait a long time for the rate limit to reset.
+
+### 🧹 Chrome Auto-Cleanup
+> When the tool finishes or is closed (including via `Ctrl+C`), **Chrome and chromedriver processes are automatically terminated**. No background Chrome processes will be left running on your system.
 
 
 ## ⭐ Features

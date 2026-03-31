@@ -12,10 +12,34 @@ from colorama import Fore, init
 import requests
 import os
 import subprocess
+import atexit
+import signal
 from selenium.webdriver.chrome.service import Service
 
 
 init(autoreset=True)
+
+# Global driver reference for cleanup
+_active_driver = None
+
+def _cleanup_chrome():
+    """Ensures Chrome and chromedriver processes are terminated when the script exits."""
+    global _active_driver
+    try:
+        if _active_driver:
+            _active_driver.quit()
+            _active_driver = None
+    except Exception:
+        pass
+    # Force-kill any remaining chromedriver processes on Windows
+    if os.name == 'nt':
+        try:
+            subprocess.run(['taskkill', '/F', '/IM', 'chromedriver.exe', '/T'],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+
+atexit.register(_cleanup_chrome)
 
 def random_letters(n, filter_premium=False):
     """Generates a random string consisting of letters and special characters."""
@@ -79,6 +103,7 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
             service.creation_flags = subprocess.CREATE_NO_WINDOW
         
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        _active_driver = driver  # Register for cleanup
         driver.set_page_load_timeout(10)  # Increased timeout to 10 seconds
         driver.implicitly_wait(0)
         driver.set_script_timeout(3)
@@ -216,7 +241,11 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
             
             time.sleep(random_delay)
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception:
+            pass
+        _active_driver = None
 
 
 def get_input(prompt, type_=str, validation=None, error_msg="Please enter a valid value."):
