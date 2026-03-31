@@ -9,6 +9,8 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
 ## ⚠️ Important Note
 - Usernames that start or end with characters such as ".", "-", or "_" are **Premium Aliases**. You need a premium account to claim these.
 - This tool includes a toggle to filter these out so you don't waste time on names you can't claim for free.
+- If the tool begins showing all usernames as **Claimed** regardless of availability, your IP has likely been rate-limited by guns.lol. To fix this, please **restart your VPN** or change your IP address.
+
 
 ## ⭐ Features
 - **Selenium Engine:** Uses a modern headless browser for perfect site rendering and bypass.
@@ -52,7 +54,7 @@ python gunslol.py
 </p>
 
 ## 🙏 Acknowledgements
-- [@noivan0](https://github.com/noivan0) — Thanks for the filtering feature contributions.
+  - [@noivan0](https://github.com/noivan0) — Thanks for the filtering feature contributions.
 
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
