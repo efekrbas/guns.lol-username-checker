@@ -23,6 +23,7 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
 ### 🧹 Chrome Auto-Cleanup
 > When the tool finishes or is closed (including via `Ctrl+C`), **Chrome and chromedriver processes are automatically terminated**. No background Chrome processes will be left running on your system.
 
+
 ## ⭐ Features
 - **Selenium Engine:** Uses a modern headless browser for perfect site rendering and bypass.
 - **Redirect Protection:** 100% accurate status checking. Detects if a username (like `egn`) is actually a redirect to another profile, preventing false positives.
@@ -67,7 +68,7 @@ python gunslol.py
 </p>
 
 ## 🙏 Acknowledgements
-- [@noivan0](https://github.com/noivan0) — Thanks for the filtering feature contributions.
+  - [@noivan0](https://github.com/noivan0) — Thanks for the filtering feature contributions.
 
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -13,25 +13,11 @@ import requests
 import os
 import subprocess
 import atexit
-import ctypes
+import signal
 from selenium.webdriver.chrome.service import Service
 
 
 init(autoreset=True)
-
-def is_double_clicked():
-    """Check if script was launched by double-clicking (Windows only)."""
-    if os.name != 'nt':
-        return False
-    try:
-        kernel32 = ctypes.windll.kernel32
-        process_list = (ctypes.c_uint * 1)()
-        count = kernel32.GetConsoleProcessList(process_list, 1)
-        return count <= 1
-    except:
-        return False
-
-_launched_by_double_click = is_double_clicked()
 
 # Global driver reference for cleanup
 _active_driver = None
@@ -154,24 +140,15 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
                 is_unclaimed = False
                 is_error = False
                 status = ""
+                is_rate_limited = False
                 
                 while attempt < max_retries:
                     try:
-                        # Change user-agent on each request to prevent rate limiting
-                        try:
-                            driver.execute_cdp_cmd('Network.setUserAgentOverride', {
-                                "userAgent": get_random_user_agent()
-                            })
-                        except:
-                            pass
-                        
-                        # Pre-request delay to prevent rate limiting
                         time.sleep(random.uniform(0.5, 1.0))
                         
-                        # Page load
                         try:
                             driver.get(f"https://{url}")
-                            time.sleep(1.0) # Wait for page to load
+                            time.sleep(1.5) 
                         except (TimeoutException, WebDriverException):
                             attempt += 1
                             if attempt < max_retries:
@@ -181,16 +158,26 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
                             break
                         
                         # Detection Logic
+                        page_title = driver.title.lower()
+                        page_source = driver.page_source.lower()
+                        
+                        # Check for Rate Limiting / Cloudflare
+                        if any(x in page_title for x in ["cloudflare", "just a moment", "access denied", "attention required"]) or \
+                           any(x in page_source for x in ["too many requests", "blocked", "enable javascript", "verify you are human"]):
+                            is_rate_limited = True
+                            print(f"{Fore.RED}Rate limited. No proxies in use. Waiting 60s...{Fore.RESET}")
+                            time.sleep(60)
+                            attempt += 1
+                            continue
+
                         is_unclaimed = False
                         is_error = False
                         
                         try:
-                            # 1. URL Check (If redirected, it's taken)
                             current_url = driver.current_url.lower().rstrip('/')
                             if current_suffix.lower() not in current_url:
-                                is_unclaimed = False # Taken and redirected
+                                is_unclaimed = False 
                             else:
-                                # 2. Look for "Username not found" heading
                                 h1_elements = driver.find_elements(By.TAG_NAME, "h1")
                                 unclaimed_found = False
                                 for h1 in h1_elements:
@@ -201,22 +188,16 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
                                 if unclaimed_found:
                                     is_unclaimed = True
                                 else:
-                                    # 3. Check page title (Additional measure)
-                                    page_title = driver.title.lower()
-                                    unclaimed_titles = [
-                                        "guns.lol: everything you want, right here."
-                                    ]
-                                    
-                                    if any(ut in page_title for ut in unclaimed_titles):
+                                    # Title check
+                                    if "everything you want" in page_title:
                                         is_unclaimed = True
                                     elif not page_title:
                                         is_error = True
                                     else:
-                                        is_unclaimed = False # Other cases = claimed
+                                        is_unclaimed = False 
                         except:
                             is_error = True
 
-                        # If no error or last attempt, break out
                         if not is_error or attempt >= max_retries - 1:
                             break
                         
@@ -229,26 +210,20 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
                             break
                         time.sleep(2)
 
-                if is_error:
+                if is_rate_limited:
+                    status = f"{Fore.YELLOW}Rate Limited/Blocked"
+                elif is_error:
                     status = f"{Fore.YELLOW}error/timeout"
                 elif is_unclaimed:
                     status = f"{Fore.GREEN}unclaimed"
-                
                     if save_to_file:
                         with open("unclaimed.txt", "a") as file:
                             file.write(f"{current_suffix}\n")
-                
                     if webhook_url:
-                        embed = {
-                            "title": f"Available: {current_suffix} (https://guns.lol/{current_suffix})",
-                            "description": f"github.com/efekrbas",
-                            "color": 0x9B59B6
-                        }
+                        embed = {"title": f"Available: {current_suffix} (https://guns.lol/{current_suffix})", "description": "github.com/efekrbas", "color": 0x9B59B6}
                         payload = {"embeds": [embed]}
-                        try:
-                            requests.post(webhook_url, json=payload)
-                        except:
-                            pass
+                        try: requests.post(webhook_url, json=payload)
+                        except: pass
                 else:
                     status = f"{Fore.RED}claimed"
                 
@@ -256,18 +231,12 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
 
             except Exception as e:
                 error_msg = str(e)
-                if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
-                    print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}Timeout - Skipping{Fore.RESET}")
-                else:
-                    print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.RED}Error: {error_msg[:50]}...{Fore.RESET}")
+                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.RED}Error: {error_msg[:50]}...{Fore.RESET}")
          
             # Random delay
             random_delay = interval + random.uniform(0.5, 1.0)
             if request_count % 10 == 0:
-                random_delay += random.uniform(2.0, 4.0)
-                print(f"{Fore.YELLOW}Rate limit prevention: waiting {random_delay:.2f} seconds...{Fore.RESET}")
-            elif request_count % 5 == 0:
-                random_delay += random.uniform(0.5, 1.5)
+                random_delay += random.uniform(1.0, 2.0)
             
             time.sleep(random_delay)
     finally:
@@ -298,6 +267,7 @@ def get_input(prompt, type_=str, validation=None, error_msg="Please enter a vali
             print(f"{Fore.RED}{error_msg}{Fore.RESET}")
         except KeyboardInterrupt:
             print(f"\n{Fore.YELLOW}Program terminated.{Fore.RESET}")
+            input(f"\n{Fore.CYAN}Press Enter to exit...{Fore.RESET}")
             exit()
 
 try:
@@ -305,17 +275,17 @@ try:
         "How many letter usernames should be checked? (Example: 5): ",
         type_=int,
         validation=lambda x: x > 0,
-        error_msg="Please enter a valid value."
+        error_msg="Letter count must be a positive number."
     )
 
     interval = get_input(
         "Delay (in seconds *recommended 0.1*): ",
         type_=float,
         validation=lambda x: x >= 0,
-        error_msg="Please enter a valid value."
+        error_msg="Delay cannot be negative."
     )
 
-    use_wordlist = get_input("Use customlist.txt? (Y/N): ", type_=bool, error_msg="Please enter Y or N.")
+    use_wordlist = get_input("Use customlist.txt? (Y/N): ", type_=bool)
     wordlist = None
 
     if use_wordlist:
@@ -331,18 +301,14 @@ try:
             print(f"{Fore.RED}customlist.txt not found. Switching to random mode.{Fore.RESET}")
             use_wordlist = False
 
-    filter_premium = get_input("Filter out usernames requiring Premium? (Starts/ends with '.', '-', '_') [Y/N]: ", type_=bool, error_msg="Please enter Y or N.")
+    filter_premium = get_input("Filter out usernames requiring Premium? (Starts/ends with '.', '-', '_') [Y/N]: ", type_=bool)
 
-    save_to_file = get_input("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ", type_=bool, error_msg="Please enter Y or N.")
+    save_to_file = get_input("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ", type_=bool)
     
-    use_webhook = get_input("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ", type_=bool, error_msg="Please enter Y or N.")
+    use_webhook = get_input("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ", type_=bool)
     webhook_url = None
     if use_webhook:
-        webhook_url = get_input(
-            "Enter your Discord webhook URL: ",
-            validation=lambda x: x.startswith("https://discord.com/api/webhooks/") or x.startswith("https://discordapp.com/api/webhooks/"),
-            error_msg="Please enter a valid Discord webhook URL (https://discord.com/api/webhooks/...)."
-        )
+        webhook_url = input("Enter your Discord webhook URL: ").strip()
 
     check_user_status(letter_count, interval, wordlist, filter_premium, save_to_file, webhook_url)
 except KeyboardInterrupt:
@@ -350,6 +316,4 @@ except KeyboardInterrupt:
 except Exception as e:
     print(f"{Fore.RED}An unexpected error occurred: {e}{Fore.RESET}")
 finally:
-    if _launched_by_double_click:
-        print(f"\n{Fore.CYAN}Press any key to exit...{Fore.RESET}")
-        os.system("pause >nul")
+    input(f"\n{Fore.CYAN}Press Enter to exit...{Fore.RESET}")
