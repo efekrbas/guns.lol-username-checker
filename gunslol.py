@@ -148,33 +148,42 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
                             is_error = True
                             break
                         
-                        # Durum tespiti için değişkenler
+                        # Durum tespiti - En sağlam yöntemler:
                         is_unclaimed = False
                         is_error = False
                         
                         try:
-                            # Sayfa içeriğinde "Username not found" başlığını ara (En garantisi bu)
-                            h1_elements = driver.find_elements(By.TAG_NAME, "h1")
-                            unclaimed_found = False
-                            for h1 in h1_elements:
-                                if "username not found" in h1.text.lower() or "kullanıcı adı bulunamadı" in h1.text.lower():
-                                    unclaimed_found = True
-                                    break
-                            
-                            if unclaimed_found:
-                                is_unclaimed = True
+                            # 1. URL Kontrolü (Yönlendirme varsa alınmıştır)
+                            current_url = driver.current_url.lower().rstrip('/')
+                            if current_suffix.lower() not in current_url:
+                                is_unclaimed = False # Alınmış ve başka yere yönlendirilmiş
                             else:
-                                # Sayfa başlığını kontrol et (Ek önlem)
-                                page_title = driver.title.lower()
-                                if page_title and "@" in page_title:
-                                    is_unclaimed = False
-                                elif not page_title or "guns.lol" in page_title:
-                                    if not page_title:
+                                # 2. Sayfa içeriğinde "Username not found" başlığını ara
+                                h1_elements = driver.find_elements(By.TAG_NAME, "h1")
+                                unclaimed_found = False
+                                for h1 in h1_elements:
+                                    if "username not found" in h1.text.lower() or "kullanıcı adı bulunamadı" in h1.text.lower():
+                                        unclaimed_found = True
+                                        break
+                                
+                                if unclaimed_found:
+                                    is_unclaimed = True
+                                else:
+                                    # 3. Sayfa başlığını kontrol et (Ek önlem)
+                                    # Unclaimed sayfa başlığı sabittir: "guns.lol: everything you want..." veya "çözüm burada"
+                                    page_title = driver.title.lower()
+                                    unclaimed_titles = [
+                                        "guns.lol: everything you want, right here.",
+                                        "guns.lol: istediğin her şey burada.",
+                                        "guns.lol: istedigin her sey burada."
+                                    ]
+                                    
+                                    if any(ut in page_title for ut in unclaimed_titles):
+                                        is_unclaimed = True
+                                    elif not page_title:
                                         is_error = True
                                     else:
-                                        is_unclaimed = True
-                                else:
-                                    is_error = True
+                                        is_unclaimed = False # Diğer durumlarda alınmış kabul et
                         except:
                             is_error = True
 
