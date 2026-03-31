@@ -31,7 +31,7 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
 - **Manual Delay (Interval):** Fully customizable delay settings to prevent IP rate-limiting.
 - **GPU & Log Suppression:** Clean CLI experience – no "DevTools listening" or GPU fatal failure logs.
 - **Premium Alias Filter:** Built-in option to skip usernames requiring Premium (starts/ends with `.` `-` `_`).
-- **Wordlist Support:** Check specific usernames from `customlist.txt`. Supports `//` comments for annotations.
+- **Customlist Support:** Check specific usernames from `customlist.txt`. Supports `//` comments for annotations.
 - **Discord Webhooks:** Get instant notifications on Discord. Webhook URL is validated to ensure a correct link.
 - **Chrome Auto-Cleanup:** Chrome and chromedriver processes are automatically killed on exit — no leftover background processes.
 

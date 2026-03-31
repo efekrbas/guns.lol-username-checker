@@ -84,7 +84,7 @@ def get_random_user_agent():
     ]
     return random.choice(user_agents)
 
-def check_user_status(letter_count, interval, wordlist=None, filter_premium=False, save_to_file=True, webhook_url=None):
+def check_user_status(letter_count, interval, customlist=None, filter_premium=False, save_to_file=True, webhook_url=None):
     """Checks the status of usernames based on character count or list and interval."""
     base_url = "guns.lol/"
     
@@ -127,13 +127,13 @@ def check_user_status(letter_count, interval, wordlist=None, filter_premium=Fals
     
     try:
         request_count = 0
-        usernames_to_check = wordlist if wordlist else None
+        usernames_to_check = customlist if customlist else None
         index = 0
         
         while True:
             if usernames_to_check is not None:
                 if index >= len(usernames_to_check):
-                    print(f"{Fore.CYAN}Wordlist check completed.{Fore.RESET}")
+                    print(f"{Fore.CYAN}Customlist check completed.{Fore.RESET}")
                     break
                 current_suffix = usernames_to_check[index]
                 index += 1
@@ -315,21 +315,21 @@ try:
         error_msg="Please enter a valid value."
     )
 
-    use_wordlist = get_input("Use customlist.txt? (Y/N): ", type_=bool, error_msg="Please enter Y or N.")
-    wordlist = None
+    use_customlist = get_input("Use customlist.txt? (Y/N): ", type_=bool, error_msg="Please enter Y or N.")
+    customlist = None
 
-    if use_wordlist:
+    if use_customlist:
         try:
             with open("customlist.txt", "r", encoding="utf-8") as file:
-                wordlist = [line.strip() for line in file if line.strip() and not line.strip().startswith("//")]
-            if not wordlist:
+                customlist = [line.strip() for line in file if line.strip() and not line.strip().startswith("//")]
+            if not customlist:
                 print(f"{Fore.YELLOW}customlist.txt is empty. Switching to random mode.{Fore.RESET}")
-                use_wordlist = False
+                use_customlist = False
             else:
-                print(f"{Fore.GREEN}{len(wordlist)} usernames loaded from customlist.txt.{Fore.RESET}")
+                print(f"{Fore.GREEN}{len(customlist)} usernames loaded from customlist.txt.{Fore.RESET}")
         except FileNotFoundError:
             print(f"{Fore.RED}customlist.txt not found. Switching to random mode.{Fore.RESET}")
-            use_wordlist = False
+            use_customlist = False
 
     filter_premium = get_input("Filter out usernames requiring Premium? (Starts/ends with '.', '-', '_') [Y/N]: ", type_=bool, error_msg="Please enter Y or N.")
 
@@ -344,7 +344,7 @@ try:
             error_msg="Please enter a valid Discord webhook URL (https://discord.com/api/webhooks/...)."
         )
 
-    check_user_status(letter_count, interval, wordlist, filter_premium, save_to_file, webhook_url)
+    check_user_status(letter_count, interval, customlist, filter_premium, save_to_file, webhook_url)
 except KeyboardInterrupt:
     print(f"\n{Fore.YELLOW}Program terminated.{Fore.RESET}")
 except Exception as e:
