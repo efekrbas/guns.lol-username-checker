@@ -1,24 +1,40 @@
-import cloudscraper
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 import random
 import string
 import time
 import re
 from colorama import Fore, init
 import requests
+import os
+import subprocess
+from selenium.webdriver.chrome.service import Service
 
 
 init(autoreset=True)
 
-# Characters that require a Premium alias on guns.lol
-PREMIUM_CHARS = set('._-')
-
-def random_letters(n):
+def random_letters(n, filter_premium=False):
     """Rastgele harfler ve özel karakterlerden oluşan bir string oluşturur."""
-    characters = string.ascii_lowercase + string.digits + "._-"
-    return ''.join(random.choice(characters) for _ in range(n))
+    all_chars = string.ascii_lowercase + string.digits + "._-"
+    base_chars = string.ascii_lowercase + string.digits
+    
+    if filter_premium:
+        if n == 1:
+            return random.choice(base_chars)
+        # Baş ve sonu sadece harf/sayı olsun (Premium gerektirmeyenler)
+        first = random.choice(base_chars)
+        middle = ''.join(random.choice(all_chars) for _ in range(n - 2))
+        last = random.choice(base_chars)
+        return first + middle + last
+    else:
+        return ''.join(random.choice(all_chars) for _ in range(n))
 
 def get_random_user_agent():
-    """Rastgele bir user-agent döndürür."""
+    """Rastgele bir user-agent döndürür - rate limit'i önlemek için."""
     user_agents = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
@@ -31,80 +47,51 @@ def get_random_user_agent():
     ]
     return random.choice(user_agents)
 
-def check_username(scraper, username):
-    """Tek bir kullanıcı adını kontrol eder."""
-    url = f"https://guns.lol/{username}"
-    try:
-        resp = scraper.get(url, timeout=15)
-        
-        if resp.status_code in (401, 403, 429):
-            return 'ratelimit', f"HTTP {resp.status_code}"
-        
-        if resp.status_code != 200:
-            return 'error', f"HTTP {resp.status_code}"
-        
-        text_lower = resp.text.lower()
-        title_match = re.search(r'<title>(.*?)</title>', resp.text, re.IGNORECASE)
-        title = title_match.group(1).strip() if title_match else ""
-
-        # En güvenilir yöntem sadece başlığı kontrol etmektir.
-        # "username not found" string'i JS bundle'larında tüm sayfalarda yüklü gelir, bu yüzden HTML'de aranmamalı.
-        if title.lower() == "guns.lol: everything you want, right here.":
-            return 'unclaimed', None
-        else:
-            return 'claimed', None
-            
-    except requests.exceptions.Timeout:
-        return 'error', "Timeout"
-    except requests.exceptions.ConnectionError:
-        return 'error', "Bağlantı hatası"
-    except Exception as e:
-        return 'error', str(e)[:50]
-
-def create_scraper(proxy=None):
-    """Yeni bir cloudscraper oturumu oluşturur."""
-    scraper = cloudscraper.create_scraper(
-        browser={
-            'browser': 'chrome',
-            'platform': 'windows',
-            'desktop': True
-        }
-    )
-    scraper.headers.update({
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Referer': 'https://www.google.com/',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'cross-site',
-        'Sec-Fetch-User': '?1',
-        'Cache-Control': 'max-age=0',
-    })
-    
-    if proxy:
-        scraper.proxies = {
-            "http": f"http://{proxy}",
-            "https": f"http://{proxy}"
-        }
-    return scraper
-
-def check_user_status(letter_count, wordlist=None, save_to_file=True, webhook_url=None, filter_premium=False, proxies_list=None):
-    """Kullanıcının belirlediği harf sayısı/liste ile kullanıcı durumunu kontrol eder."""
+def check_user_status(letter_count, interval, wordlist=None, filter_premium=False, save_to_file=True, webhook_url=None):
+    """Kullanıcının belirlediği harf sayısı/liste ve aralık ile kullanıcı durumunu kontrol eder."""
     base_url = "guns.lol/"
     
-    proxy_index = 0
-    current_proxy = proxies_list[proxy_index] if proxies_list else None
-    scraper = create_scraper(current_proxy)
+    # Chrome seçeneklerini ayarlıyoruz
+    chrome_options = Options()
+    chrome_options.add_argument('--headless=new')  # Arka planda çalıştır (Yeni modern mod)
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-gpu-compositing') # GPU kompozitleme kapat
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+    chrome_options.add_argument('--disable-images')  # Resimleri yükleme - hızlandırır
+    chrome_options.add_argument('--disable-gpu')  # GPU kullanımını devre dışı bırak
+    chrome_options.add_argument('--disable-software-rasterizer') # Yazılımsal renderers kapat
+    chrome_options.add_argument('--ignore-gpu-blocklist') # GPU blok listesini yoksay
+    chrome_options.add_argument('--disable-extensions')  # Uzantıları devre dışı bırak
+    chrome_options.add_argument('--log-level=3')  # Sadece kritik hataları göster
+    chrome_options.add_argument('--silent')
+    chrome_options.add_argument('--disable-logging')
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
+    # İlk user-agent'i ayarla
+    chrome_options.add_argument(f'user-agent={get_random_user_agent()}')
+    chrome_options.page_load_strategy = 'eager'  # Hızlı yükleme - DOM hazır olunca devam et
+    
+    try:
+        # DevTools ve diğer terminal mesajlarını sistem seviyesinde susturmak için
+        service = Service(log_path=os.devnull)
+        if os.name == 'nt': # Sadece Windows için
+            service.creation_flags = subprocess.CREATE_NO_WINDOW
+        
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver.set_page_load_timeout(10)  # Süreyi 10 saniyeye çıkardık
+        driver.implicitly_wait(0)
+        driver.set_script_timeout(3)
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+    except Exception as e:
+        print(f"{Fore.RED}Chrome WebDriver bulunamadı. Lütfen ChromeDriver'ı yükleyin.{Fore.RESET}")
+        print(f"Detay: {e}")
+        return
     
     try:
         request_count = 0
-        backoff_level = 0
-        max_backoff_level = 4
         
+        # Eğer wordlist varsa ona göre dön, yoksa sonsuz döngü (random) yap
         usernames_to_check = wordlist if wordlist else None
         index = 0
         
@@ -114,109 +101,160 @@ def check_user_status(letter_count, wordlist=None, save_to_file=True, webhook_ur
                     print(f"{Fore.CYAN}Wordlist check completed.{Fore.RESET}")
                     break
                 current_suffix = usernames_to_check[index]
-            else:
-                current_suffix = random_letters(letter_count)
-
-            # Premium Alias Filter
-            if filter_premium and (current_suffix[0] in PREMIUM_CHARS or current_suffix[-1] in PREMIUM_CHARS):
-                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}SKIPPED (premium alias){Fore.RESET}")
                 index += 1
-                continue
-
-            request_count += 1
-            scraper.headers.update({'User-Agent': get_random_user_agent()})
-            status, error_detail = check_username(scraper, current_suffix)
-
-            is_timeout_err = error_detail and ('Timeout' in error_detail or 'Bağlantı' in error_detail)
-
-            if status == 'ratelimit' or (status == 'error' and is_timeout_err):
-                if proxies_list:
-                    # Proxy varsa anında sonrakine geç (bekleme yok)
-                    proxy_index = (proxy_index + 1) % len(proxies_list)
-                    current_proxy = proxies_list[proxy_index]
-                    print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}{status} ({error_detail}). Switching proxy...{Fore.RESET}")
-                    scraper = create_scraper(current_proxy)
-                    continue
-                else:
-                    if status == 'ratelimit':
-                        backoff_level = min(backoff_level + 1, max_backoff_level)
-                        wait_time = 70 + (backoff_level * 10) + random.uniform(0, 5)
-                        
-                        print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}RATE LIMITED ({error_detail}){Fore.RESET}")
-                        print(f"{Fore.YELLOW}⏳ Waiting {wait_time:.0f}s... (level {backoff_level}/{max_backoff_level}){Fore.RESET}")
-                        
-                        scraper = create_scraper()
-                        time.sleep(wait_time)
-                        continue
-                    else:
-                        detail = f" ({error_detail})" if error_detail else ""
-                        print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}error{detail}{Fore.RESET}")
-                        index += 1
-                        
-            elif status == 'error':
-                detail = f" ({error_detail})" if error_detail else ""
-                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}error{detail}{Fore.RESET}")
-                index += 1
-                    
-            elif status == 'unclaimed':
-                backoff_level = max(0, backoff_level - 1)
-                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - Status: {Fore.GREEN}unclaimed{Fore.RESET}")
                 
-                if save_to_file:
-                    with open("unclaimed.txt", "a") as file:
-                        file.write(f"{base_url}{current_suffix}\n")
-           
-                if webhook_url:
-                    embed = {
-                        "title": f"Available: {current_suffix} (https://guns.lol/{current_suffix})",
-                        "description": f"github.com/efekrbas",
-                        "color": 0x9B59B6
-                    }
-                    payload = {"embeds": [embed]}
-                    try:
-                        requests.post(webhook_url, json=payload)
-                    except Exception as e:
-                        print(f"Webhook gönderimi başarısız: {e}")
-                index += 1
+                # Wordlist kontrolünde filtreleme aktifse geç
+                if filter_premium:
+                    if current_suffix[0] in "._-" or current_suffix[-1] in "._-":
+                        print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}Skipping (Premium Alias){Fore.RESET}")
+                        continue
             else:
-                backoff_level = max(0, backoff_level - 1)
-                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - Status: {Fore.RED}claimed{Fore.RESET}")
-                index += 1
-        
-            # Sabit delay: 6-10 saniye arası (dakikada ~7-8 istek)
-            delay = random.uniform(6.0, 10.0)
-            time.sleep(delay)
+                current_suffix = random_letters(letter_count, filter_premium)
             
-    except KeyboardInterrupt:
-        print(f"\n{Fore.RED}Program stopped.{Fore.RESET}")
+            url = base_url + current_suffix
+            request_count += 1
 
+            try:
+                # Retry mekanizması
+                max_retries = 2
+                attempt = 0
+                is_unclaimed = False
+                is_error = False
+                status = ""
+                
+                while attempt < max_retries:
+                    try:
+                        # Her istekte user-agent değiştir (rate limit'i önlemek için)
+                        try:
+                            driver.execute_cdp_cmd('Network.setUserAgentOverride', {
+                                "userAgent": get_random_user_agent()
+                            })
+                        except:
+                            pass
+                        
+                        # Her istekten önce bekleme (rate limit'i önlemek için)
+                        time.sleep(random.uniform(0.5, 1.0))
+                        
+                        # Sayfa yükleme
+                        try:
+                            driver.get(f"https://{url}")
+                            # Sayfanın en azından bir kısmının yüklendiğinden emin olalım
+                            time.sleep(1.0) # Bekleme süresini artırdık
+                        except (TimeoutException, WebDriverException):
+                            attempt += 1
+                            if attempt < max_retries:
+                                time.sleep(2)
+                                continue
+                            is_error = True
+                            break
+                        
+                        # Durum tespiti için değişkenler
+                        is_unclaimed = False
+                        is_error = False
+                        
+                        try:
+                            # Sayfa içeriğinde "Username not found" başlığını ara (En garantisi bu)
+                            h1_elements = driver.find_elements(By.TAG_NAME, "h1")
+                            unclaimed_found = False
+                            for h1 in h1_elements:
+                                if "username not found" in h1.text.lower() or "kullanıcı adı bulunamadı" in h1.text.lower():
+                                    unclaimed_found = True
+                                    break
+                            
+                            if unclaimed_found:
+                                is_unclaimed = True
+                            else:
+                                # Sayfa başlığını kontrol et (Ek önlem)
+                                page_title = driver.title.lower()
+                                if page_title and "@" in page_title:
+                                    is_unclaimed = False
+                                elif not page_title or "guns.lol" in page_title:
+                                    if not page_title:
+                                        is_error = True
+                                    else:
+                                        is_unclaimed = True
+                                else:
+                                    is_error = True
+                        except:
+                            is_error = True
 
-def ask_yn(prompt):
-    """Ask a Y/N question and only accept 'y' or 'n' as valid input."""
-    while True:
-        answer = input(prompt).strip().lower()
-        if answer in ('y', 'n'):
-            return answer == 'y'
-        print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
+                        # Eğer hata almadıysak veya son denemeyse döngüden çık
+                        if not is_error or attempt >= max_retries - 1:
+                            break
+                        
+                        attempt += 1
+                        time.sleep(2)
+                    except Exception:
+                        attempt += 1
+                        if attempt >= max_retries:
+                            is_error = True
+                            break
+                        time.sleep(2)
+
+                if is_error:
+                    status = f"{Fore.YELLOW}error/timeout"
+                elif is_unclaimed:
+                    status = f"{Fore.GREEN}unclaimed"
+                
+                    if save_to_file:
+                        with open("unclaimed.txt", "a") as file:
+                            file.write(f"{current_suffix}\n")
+                
+                    if webhook_url:
+                        embed = {
+                            "title": f"Available: {current_suffix} (https://guns.lol/{current_suffix})",
+                            "description": f"github.com/efekrbas",
+                            "color": 0x9B59B6
+                        }
+                        payload = {"embeds": [embed]}
+                        try:
+                            requests.post(webhook_url, json=payload)
+                        except:
+                            pass
+                else:
+                    status = f"{Fore.RED}claimed"
+                
+                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - Status: {status}{Fore.RESET}")
+
+            except Exception as e:
+                # Genel hata yakalama - programın durmaması için
+                error_msg = str(e)
+                if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+                    print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.YELLOW}Timeout - Skipping{Fore.RESET}")
+                else:
+                    print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - {Fore.RED}Error: {error_msg[:50]}...{Fore.RESET}")
+         
+            # Rastgele delay ekle
+            random_delay = interval + random.uniform(0.5, 1.0)
+            if request_count % 10 == 0:
+                random_delay += random.uniform(2.0, 4.0)
+                print(f"{Fore.YELLOW}Rate limit prevention: waiting {random_delay:.2f} seconds...{Fore.RESET}")
+            elif request_count % 5 == 0:
+                random_delay += random.uniform(0.5, 1.5)
+            
+            time.sleep(random_delay)
+    finally:
+        driver.quit()
 
 
 try:
-    while True:
-        try:
-            letter_count = int(input("How many letter usernames should be checked? (Example: 5): "))
-            if letter_count > 0:
-                break
-            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
-        except ValueError:
-            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
+    letter_count = int(input("How many letter usernames should be checked? (Example: 5): "))
+    if letter_count <= 0:
+        print("Harf sayısı pozitif bir sayı olmalıdır.")
+        exit()
 
-    use_wordlist = ask_yn("Use customlist.txt? (Y/N): ")
+    interval = float(input("Delay (in seconds *recommended 0.1*): "))
+    if interval < 0:
+        print("Saniye aralığı negatif olamaz.")
+        exit()
+
+    use_wordlist = input("Use customlist.txt? (Y/N): ").strip().lower() == 'y'
     wordlist = None
 
     if use_wordlist:
         try:
             with open("customlist.txt", "r", encoding="utf-8") as file:
-                wordlist = [line.strip() for line in file if line.strip() and not (line.strip().startswith("//") or line.strip().startswith("#") or line.strip().startswith(";"))]
+                wordlist = [line.strip() for line in file if line.strip()]
             if not wordlist:
                 print(f"{Fore.YELLOW}customlist.txt is empty. Switching to random mode.{Fore.RESET}")
                 use_wordlist = False
@@ -226,33 +264,16 @@ try:
             print(f"{Fore.RED}customlist.txt not found. Switching to random mode.{Fore.RESET}")
             use_wordlist = False
 
-    filter_premium = ask_yn("Filter out usernames requiring Premium? (Starts/ends with '.', '-', '_') [Y/N]: ")
+    filter_premium = input("Filter out usernames requiring Premium? (Starts/ends with '.', '-', '_') [Y/N]: ").strip().lower() == 'y'
 
-    save_to_file = ask_yn("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ")
-    use_webhook = ask_yn("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ")
+    save_to_file = input("Should unclaimed usernames be saved to unclaimed.txt? (Y/N): ").strip().lower() == 'y'
+    use_webhook = input("Should unclaimed usernames be sent to a Discord webhook? (Y/N): ").strip().lower()
     webhook_url = None
-    if use_webhook:
-        while True:
-            webhook_url = input("Enter your Discord webhook URL: ").strip()
-            if webhook_url.startswith("https://discord.com/api/webhooks/") or webhook_url.startswith("https://discordapp.com/api/webhooks/"):
-                break
-            print(f"{Fore.RED}Please enter a valid value.{Fore.RESET}")
+    if use_webhook == 'y':
+        webhook_url = input("Enter your Discord webhook URL: ").strip()
 
-    use_proxies = ask_yn("Use proxies from proxies.txt? (Y/N): ")
-    proxies_list = None
-    if use_proxies:
-        try:
-            with open("proxies.txt", "r", encoding="utf-8") as file:
-                proxies_list = [line.strip() for line in file if line.strip() and not (line.strip().startswith("//") or line.strip().startswith("#"))]
-            if not proxies_list:
-                print(f"{Fore.YELLOW}proxies.txt is empty. Switching to IP mode (no proxies).{Fore.RESET}")
-                proxies_list = None
-            else:
-                print(f"{Fore.GREEN}{len(proxies_list)} proxies loaded from proxies.txt.{Fore.RESET}")
-        except FileNotFoundError:
-            print(f"{Fore.RED}proxies.txt not found. Switching to IP mode (no proxies).{Fore.RESET}")
-            proxies_list = None
-
-    check_user_status(letter_count, wordlist, save_to_file, webhook_url, filter_premium, proxies_list)
+    check_user_status(letter_count, interval, wordlist, filter_premium, save_to_file, webhook_url)
+except ValueError:
+    print("Lütfen geçerli bir değer girin.")
 except KeyboardInterrupt:
-    print(f"\n{Fore.RED}Program stopped.{Fore.RESET}")
+    print("\nProgram durduruldu.")
