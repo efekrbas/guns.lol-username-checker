@@ -43,7 +43,7 @@ python gunslol.py
 ### Prompt Flow
 0. **Press Enter** — Enjoy the smooth fade-in intro.
 1. **Username length** — Char count for random generation.
-2. **Delay (Interval)** — Seconds between requests (Recommended: 0.1 - 0.5).
+2. **Delay (Interval)** — Seconds between requests (Recommended: 0.1).
 3. **Use customlist.txt?** — Load your own list of usernames.
 4. **Filter Premium?** — Auto-skip names free users can't claim.
 5. **Save to unclaimed.txt?** — Log hits to a file.
