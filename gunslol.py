@@ -15,6 +15,23 @@ import subprocess
 import atexit
 import ctypes
 from selenium.webdriver.chrome.service import Service
+from pystyle import Anime, Colors, Colorate, Center, System, Write
+import os, sys
+
+intro_text = r'''
+  _____ _____ _______ _    _ _    _ ____   _____ ____  __  __     ________ ______ ______ _  _______  ____           _____ 
+ / ____|_   _|__   __| |  | | |  | |  _ \ / ____/ __ \|  \/  |   / /  ____|  ____|  ____| |/ /  __ \|  _ \   /\    / ____|
+| |  __  | |    | |  | |__| | |  | | |_) | |   | |  | | \  / |  / /| |__  | |__  | |__  | ' /| |__) | |_) | /  \  | (___  
+| | |_ | | |    | |  |  __  | |  | |  _ <| |   | |  | | |\/| | / / |  __| |  __| |  __| |  < |  _  /|  _ < / /\ \  \___ \ 
+| |__| |_| |_   | |  | |  | | |__| | |_) | |___| |__| | |  | |/ /  | |____| |    | |____| . \| | \ \| |_) / ____ \ ____) |
+ \_____|_____|  |_|  |_|  |_|\____/|____(_)_____\____/|_|  |_/_/   |______|_|    |______|_|\_\_|  \_\____/_/    \_\_____/ 
+
+                                    > Press Enter                                         
+'''
+
+def show_header():
+    System.Clear()
+    print(Colorate.Vertical(Colors.purple_to_blue, intro_text.split('> Press Enter')[0]))
 
 
 init(autoreset=True)
@@ -281,6 +298,7 @@ def check_user_status(letter_count, interval, customlist=None, filter_premium=Fa
 def get_input(prompt, type_=str, validation=None, error_msg="Please enter a valid value."):
     while True:
         try:
+            show_header()
             value = input(prompt).strip()
             if type_ == bool:
                 if value.lower() == 'y':
@@ -301,6 +319,8 @@ def get_input(prompt, type_=str, validation=None, error_msg="Please enter a vali
             exit()
 
 try:
+    Anime.Fade(Center.Center(intro_text), Colors.purple_to_blue, Colorate.Vertical, interval=.035, enter=True)
+    
     letter_count = get_input(
         "How many letter usernames should be checked? (Example: 5): ",
         type_=int,

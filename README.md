@@ -15,13 +15,8 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
 
 
 ## ⭐ Features
-- **Selenium Engine:** Uses a modern headless browser for perfect site rendering and bypass.
-- **Redirect Protection:** 100% accurate status checking. Detects if a username (like `egn`) is actually a redirect to another profile, preventing false positives.
-- **Input Validation:** All prompts are validated — invalid inputs show a red error and re-ask instead of crashing.
-- **Manual Delay (Interval):** Fully customizable delay settings to prevent IP rate-limiting.
-- **GPU & Log Suppression:** Clean CLI experience – no "DevTools listening" or GPU fatal failure logs.
-- **Premium Alias Filter:** Built-in option to skip usernames requiring Premium (starts/ends with `.` `-` `_`).
-- **Customlist Support:** Check specific usernames from `customlist.txt`. Supports `//` comments for annotations.
+- **Premium Purple CLI Theme:** Stylish, modern "Purple-to-Blue" gradient interface using `pystyle`.
+- **Intro Animations:** Smooth fade-in effects and persistent headers for a high-quality professional feel.
 - **Discord Webhooks:** Get instant notifications on Discord. Webhook URL is validated to ensure a correct link.
 - **Chrome Auto-Cleanup:** Chrome and chromedriver processes are automatically killed on exit — no leftover background processes.
 
@@ -32,6 +27,8 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
    ```bash
    git clone https://github.com/efekrbas/guns.lol-username-checker.git
    cd guns.lol-username-checker
+3. **Install Requirements:**
+   ```bash
    pip install -r requirements.txt
    ```
    *Or just run `install.bat` on Windows.*
@@ -44,6 +41,7 @@ python gunslol.py
 ```
 
 ### Prompt Flow
+0. **Press Enter** — Enjoy the smooth fade-in intro.
 1. **Username length** — Char count for random generation.
 2. **Delay (Interval)** — Seconds between requests (Recommended: 0.1 - 0.5).
 3. **Use customlist.txt?** — Load your own list of usernames.
