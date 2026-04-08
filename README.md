@@ -55,8 +55,5 @@ python gunslol.py
   <img src="https://github.com/efekrbas/guns.lol-username-checker/blob/main/images/image.png" alt="Checker Preview">
 </p>
 
-## 🙏 Acknowledgements
-  - [@noivan0](https://github.com/noivan0) — Thanks for the filtering feature contributions.
-
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
