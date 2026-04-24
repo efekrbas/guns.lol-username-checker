@@ -31,7 +31,7 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
    ```bash
    pip install -r requirements.txt
    ```
-   *Or just run `install.bat` on Windows.*
+   *Or just run `install.bat` on Windows, or `chmod +x install.sh && ./install.sh` on Linux/macOS.*
 
 ## 🚀 How to Use
 
