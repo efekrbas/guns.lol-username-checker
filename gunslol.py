@@ -365,6 +365,7 @@ try:
             error_msg="Please enter a valid Discord webhook URL (https://discord.com/api/webhooks/...)."
         )
 
+    print()
     check_user_status(letter_count, interval, customlist, filter_premium, save_to_file, webhook_url)
 except KeyboardInterrupt:
     print(f"\n{Fore.YELLOW}Program terminated.{Fore.RESET}")
