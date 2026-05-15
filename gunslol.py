@@ -18,6 +18,8 @@ from selenium.webdriver.chrome.service import Service
 from pystyle import Anime, Colors, Colorate, Center, System, Write
 import os, sys
 
+purple_static = ['150;0;255'] * 24
+
 intro_text = r'''
  
                       _     _                                             _           _           
@@ -32,7 +34,7 @@ intro_text = r'''
 
 def show_header():
     System.Clear()
-    print(Colorate.Vertical(Colors.purple_to_blue, intro_text.split('> Press Enter')[0]))
+    print(Colorate.Vertical(purple_static, intro_text.split('> Press Enter')[0]))
 
 
 init(autoreset=True)
@@ -320,7 +322,7 @@ def get_input(prompt, type_=str, validation=None, error_msg="Please enter a vali
             exit()
 
 try:
-    Anime.Fade(Center.Center(intro_text), Colors.purple_to_blue, Colorate.Vertical, interval=.035, enter=True)
+    Anime.Fade(Center.Center(intro_text), purple_static, Colorate.Vertical, interval=.035, enter=True)
     
     letter_count = get_input(
         "How many letter usernames should be checked? (Example: 5): ",
@@ -330,7 +332,7 @@ try:
     )
 
     interval = get_input(
-        "Delay (in seconds *recommended 0.1*): ",
+        "Delay (in seconds *recommended 0*): ",
         type_=float,
         validation=lambda x: x >= 0,
         error_msg="Please enter a valid value."
