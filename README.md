@@ -56,7 +56,7 @@ python gunslol.py
 </p>
 
 ## 🙏 Acknowledgements
-  - [@noivan0](https://github.com/noivan0) — Thanks for the filtering feature contributions.
+  - [@noivan0](https://github.com/noivan0) — Thanks for the filtering feature contributions and readme shield badges suggestion.
 
 ## 📜 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
