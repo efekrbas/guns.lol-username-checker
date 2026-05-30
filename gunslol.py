@@ -277,7 +277,7 @@ def check_user_status(letter_count, interval, customlist=None, filter_premium=Fa
                 else:
                     status = f"{Fore.RED}claimed"
                 
-                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} - Status: {status}{Fore.RESET}")
+                print(f"URL: {Fore.MAGENTA}{base_url}{current_suffix} {Fore.WHITE}- Status: {status}{Fore.RESET}")
 
             except Exception as e:
                 error_msg = str(e)
