@@ -1,4 +1,4 @@
-# <img width="100" height="100" alt="image" src="https://github.com/user-attachments/assets/08d7a791-67ec-4142-bf94-a57d6907134c" /> guns.lol Username Checker
+# <img src="https://github.com/user-attachments/assets/08d7a791-67ec-4142-bf94-a57d6907134c" width="32" height="32" align="center"> guns.lol Username Checker
 
 ![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python&logoColor=white)
 ![Selenium](https://img.shields.io/badge/Engine-Selenium-orange?logo=selenium&logoColor=white)
