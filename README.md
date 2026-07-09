@@ -52,7 +52,7 @@ python gunslol.py
 ## 📷 Preview
 
 <p align="left">
-  <img src="https://github.com/efekrbas/guns.lol-username-checker/blob/main/images/image.png" alt="Checker Preview">
+  <img src="images/image.png" alt="Checker Preview">
 </p>
 
 ## 🙏 Acknowledgements
