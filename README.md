@@ -10,6 +10,12 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
 - Usernames that start or end with characters such as ".", "-", or "_" are **Premium Aliases**. You need a premium account to claim these.
 - This tool includes a toggle to filter these out so you don't waste time on names you can't claim for free.
 
+### 🌐 Free Proxies (Webshare.io)
+> You can get **10 free permanent HTTP proxies** per account from [Webshare.io](https://www.webshare.io/). Simply create a free account, copy your proxy credentials, and paste them into `proxies.txt` in `host:port:username:password` format.
+
+### 📌 Known Issues
+> **Occasional Error / Timeout:** You may very rarely encounter an `error/timeout` status on a username due to temporary Cloudflare challenge spikes or network latency. This minor issue is actively being worked on and will be resolved in future updates.
+
 ### 🧹 Chrome Auto-Cleanup
 > When the tool finishes or is closed (including via `Ctrl+C`), **Chrome and chromedriver processes are automatically terminated**. No background Chrome processes will be left running on your system.
 
