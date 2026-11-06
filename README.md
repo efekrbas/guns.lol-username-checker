@@ -18,6 +18,7 @@ A powerful, high-accuracy CLI tool to check for available usernames on guns.lol 
 - **Premium Purple CLI Theme:** Stylish, modern purple interface using `pystyle`.
 - **Intro Animations:** Smooth fade-in effects and persistent headers for a high-quality professional feel.
 - **Discord Webhooks:** Get instant notifications on Discord. Webhook URL is validated to ensure a correct link.
+- **Authenticated Proxies:** Optionally rotate authenticated HTTP proxies from `proxies.txt` between usernames.
 - **Chrome Auto-Cleanup:** Chrome and chromedriver processes are automatically killed on exit — no leftover background processes.
 
 ## 🛠️ Installation
@@ -45,9 +46,10 @@ python gunslol.py
 1. **Username length** — Char count for random generation.
 2. **Delay (Interval)** — Seconds between requests (Recommended: 0).
 3. **Use customlist.txt?** — Load your own list of usernames.
-4. **Filter Premium?** — Auto-skip names free users can't claim.
-5. **Save to unclaimed.txt?** — Log hits to a file.
-6. **Discord webhook?** — Real-time alerts via Discord.
+4. **Use proxies.txt?** — Optionally rotate through proxies between usernames. Add one authenticated HTTP proxy per line as `host:port:username:password`.
+5. **Filter Premium?** — Auto-skip names free users can't claim.
+6. **Save to unclaimed.txt?** — Log hits to a file.
+7. **Discord webhook?** — Real-time alerts via Discord.
 
 ## 📷 Preview
 
